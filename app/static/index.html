@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hotel Insights Dashboard</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f2f5;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        margin: 0;
+        padding: 40px 20px;
+        align-items: center; /* Center everything horizontally */
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #333;
+      }
+
+      .cards-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; /* Center cards inside container */
+        gap: 20px;
+        max-width: 1200px;
+        width: 100%; /* Make container take full width so justify-content works */
+        margin-bottom: 30px;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: 25px 20px;
+        width: 320px;
+        text-align: center;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .card-value {
+        font-size: 2.2em;
+        font-weight: bold;
+        margin-bottom: 12px;
+        color: #1f618d;
+      }
+
+      .card-text {
+        font-size: 1em;
+        color: #555;
+        line-height: 1.4;
+      }
+
+      /* ChatGPT-style input */
+      .chat-input-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        width: 100%;
+      }
+
+      .chat-input {
+        width: 500px;
+        max-width: 90%;
+        padding: 12px 15px;
+        border-radius: 25px;
+        border: 1px solid #ccc;
+        font-size: 1em;
+        outline: none;
+        background-color: #eaeaea;
+        color: #999;
+      }
+
+      .chat-input:disabled {
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Hotel Financial Insights</h1>
+    <div class="cards-container" id="cards-container">
+      <!-- Cards injected here -->
+    </div>
+
+    <!-- ChatGPT-style disabled input -->
+    <div class="chat-input-container">
+      <input
+        type="text"
+        class="chat-input"
+        placeholder="Start a new conversation..."
+        disabled
+      />
+    </div>
+
+    <script>
+      // Load insights JSON
+      fetch("insights.json")
+        .then((response) => response.json())
+        .then((data) => {
+          const container = document.getElementById("cards-container");
+          data.insights.forEach((insight) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+            <div class="card-value">${insight.value}</div>
+            <div class="card-text">${insight.text}</div>
+          `;
+            container.appendChild(card);
+          });
+        })
+        .catch((error) => console.error("Error loading insights:", error));
+    </script>
+  </body>
+</html>
