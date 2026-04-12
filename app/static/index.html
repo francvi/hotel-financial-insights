@@ -1,271 +1,289 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hotel Insights Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <style>
-      :root {
-        --primary: #0f172a;
-        --secondary: #334155;
-        --accent: #3b82f6;
-        --accent-light: #60a5fa;
-        --surface: #ffffff;
-        --background: #f1f5f9;
-        --text-primary: #1e293b;
-        --text-secondary: #64748b;
-        --success: #10b981;
-        --warning: #f59e0b;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotel Insights</title>
 
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: linear-gradient(135deg, var(--background) 0%, #e2e8f0 100%);
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        margin: 0;
-        padding: 40px 20px;
-        align-items: center;
-      }
-
-      header {
-        text-align: center;
-        margin-bottom: 40px;
-      }
-
-      h1 {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin: 0 0 8px 0;
-        letter-spacing: -0.02em;
-      }
-
-      .subtitle {
-        color: var(--text-secondary);
-        font-size: 1rem;
-        margin: 0;
-      }
-
-      .cards-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
-        max-width: 1200px;
-        width: 100%;
-        margin-bottom: 40px;
-      }
-
-      .card {
-        background: var(--surface);
-        border-radius: 16px;
-        padding: 28px;
-        position: relative;
-        overflow: hidden;
-        cursor: pointer;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 40px rgba(0, 0, 0, 0.03);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--accent), var(--accent-light));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      .card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
-      }
-
-      .card:hover::before {
-        opacity: 1;
-      }
-
-      .card-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-light));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 20px;
-        transition: transform 0.3s ease;
-      }
-
-      .card:hover .card-icon {
-        transform: scale(1.1) rotate(3deg);
-      }
-
-      .card-icon i {
-        font-size: 1.5rem;
-        color: white;
-      }
-
-      .card-value {
-        font-size: 2.4rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin-bottom: 8px;
-        letter-spacing: -0.02em;
-      }
-
-      .card-text {
-        font-size: 0.95rem;
-        color: var(--text-secondary);
-        line-height: 1.5;
-        margin: 0;
-      }
-
-      .card-trend {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: 12px;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-      }
-
-      .card-trend.positive {
-        background: rgba(16, 185, 129, 0.1);
-        color: var(--success);
-      }
-
-      .card-trend.negative {
-        background: rgba(245, 158, 11, 0.1);
-        color: var(--warning);
-      }
-
-      .chat-input-container {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-        width: 100%;
-      }
-
-      .chat-input {
-        width: 500px;
-        max-width: 90%;
-        padding: 16px 24px;
-        border-radius: 30px;
-        border: 2px solid transparent;
-        font-size: 1rem;
-        outline: none;
-        background: var(--surface);
-        color: var(--text-secondary);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        transition: box-shadow 0.3s ease, border-color 0.3s ease;
-      }
-
-      .chat-input::placeholder {
-        color: var(--text-secondary);
-      }
-
-      .chat-input:disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
-
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { outfit: ['Outfit', 'sans-serif'] },
         }
       }
+    }
+  </script>
 
-      .card {
-        animation: fadeInUp 0.5s ease backwards;
-      }
+  <!-- Outfit font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-      .card:nth-child(1) { animation-delay: 0.1s; }
-      .card:nth-child(2) { animation-delay: 0.2s; }
-      .card:nth-child(3) { animation-delay: 0.3s; }
-      .card:nth-child(4) { animation-delay: 0.4s; }
-      .card:nth-child(5) { animation-delay: 0.5s; }
-      .card:nth-child(6) { animation-delay: 0.6s; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Hotel Financial Insights</h1>
-      <p class="subtitle">Real-time analytics and performance metrics</p>
-    </header>
-    <div class="cards-container" id="cards-container">
-      <!-- Cards injected here -->
+  <!-- marked.js — markdown renderer -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js"></script>
+
+  <!-- Alpine.js (pinned) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+
+  <style>
+    body { font-family: 'Outfit', sans-serif; }
+
+    /* Typing indicator dots */
+    .dot { animation: dotBounce 1.4s infinite ease-in-out both; }
+    .dot:nth-child(1) { animation-delay: 0s; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%           { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Markdown content in chat bubbles */
+    .md p { margin: 0 0 0.5em; }
+    .md p:last-child { margin-bottom: 0; }
+    .md strong { font-weight: 600; }
+    .md em { font-style: italic; }
+    .md ul, .md ol { padding-left: 1.25em; margin: 0.4em 0; }
+    .md li { margin: 0.15em 0; }
+    .md ol { list-style-type: decimal; }
+    .md ul { list-style-type: disc; }
+    .md h1,.md h2,.md h3 { font-weight: 600; margin: 0.6em 0 0.3em; line-height: 1.3; }
+    .md h1 { font-size: 1.1em; }
+    .md h2 { font-size: 1.05em; }
+    .md h3 { font-size: 1em; }
+    .md code { background: #f1f5f9; border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.88em; }
+    .md pre { background: #f1f5f9; border-radius: 8px; padding: 0.75em 1em; overflow-x: auto; margin: 0.5em 0; }
+    .md pre code { background: none; padding: 0; }
+    .md blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.75em; color: #64748b; margin: 0.5em 0; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+
+<body class="bg-[#F8F9FB] min-h-screen" x-data="dashboard()" x-init="init()">
+<div class="max-w-5xl mx-auto px-7 py-6">
+
+  <!-- ── Header ── -->
+  <div class="flex items-center justify-between pb-4 mb-5" style="border-bottom: 1px solid rgba(0,0,0,0.08)">
+    <div class="flex items-center gap-2.5">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect width="24" height="24" rx="6" fill="rgba(99,102,241,0.12)"/>
+        <rect x="5"  y="12" width="3" height="7"  rx="1" fill="#6366F1"/>
+        <rect x="10" y="8"  width="3" height="11" rx="1" fill="#6366F1" opacity="0.65"/>
+        <rect x="15" y="5"  width="3" height="14" rx="1" fill="#6366F1" opacity="0.35"/>
+      </svg>
+      <span class="text-[0.95rem] font-semibold text-slate-800 tracking-tight">Hotel Performance</span>
+      <span class="text-[0.78rem] text-slate-400">/ Financial Dashboard</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <div class="w-[5px] h-[5px] rounded-full bg-emerald-400" style="box-shadow:0 0 6px rgba(52,211,153,0.5)"></div>
+      <span class="text-[0.7rem] tracking-widest text-slate-400 uppercase">Live</span>
+    </div>
+  </div>
+
+  <!-- ── KPI Cards ── -->
+  <div class="grid grid-cols-3 gap-3 mb-6">
+    <template x-for="(card, i) in insights" :key="i">
+      <div class="bg-white rounded-xl p-5 border border-slate-200"
+           :style="`border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`">
+        <p class="text-[0.72rem] font-medium tracking-wide uppercase text-slate-500 mb-2.5 leading-snug"
+           x-text="card.text"></p>
+        <p class="font-bold text-slate-800 mb-3.5 leading-tight break-words"
+           :class="card.value.length > 18 ? 'text-xl' : card.value.length > 10 ? 'text-[1.9rem]' : 'text-[2.5rem]'"
+           x-text="card.value"></p>
+        <div class="h-px bg-slate-100"></div>
+      </div>
+    </template>
+  </div>
+
+  <!-- ── Chat ── -->
+  <div style="border-top: 1px solid rgba(0,0,0,0.06)" class="pt-5">
+    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500 mb-4">AI Analyst</p>
+
+    <!-- Suggestion chips (empty state) -->
+    <div x-show="messages.length === 0 && !loading">
+      <p class="text-[0.85rem] font-light text-slate-400 mb-3">Not sure where to start? Try one of these —</p>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <template x-for="chip in chips" :key="chip">
+          <button @click="sendMessage(chip)"
+                  class="bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 text-[0.85rem] text-slate-600
+                         hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700
+                         transition-all duration-150 shadow-sm cursor-pointer">
+            <span x-text="chip"></span>
+          </button>
+        </template>
+      </div>
     </div>
 
-    <!-- ChatGPT-style disabled input -->
-    <div class="chat-input-container">
+    <!-- Message list -->
+    <div class="space-y-2 mb-4 overflow-y-auto max-h-[420px]" x-ref="messageList">
+      <template x-for="msg in messages" :key="msg.id">
+        <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
+          <div class="max-w-[82%] rounded-xl px-4 py-3 text-[0.95rem] leading-relaxed text-slate-800 border"
+               :class="msg.role === 'user'
+                 ? 'bg-indigo-50 border-indigo-200'
+                 : 'bg-white border-slate-200 shadow-sm'">
+            <span class="md" x-html="render(msg.content)"></span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Typing indicator -->
+      <div x-show="loading" class="flex justify-start">
+        <div class="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+          <div class="flex gap-1 items-center h-5">
+            <div class="dot w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+            <div class="dot w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+            <div class="dot w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <form @submit.prevent="sendMessage()" class="flex gap-2">
       <input
+        x-model="input"
         type="text"
-        class="chat-input"
-        placeholder="Start a new conversation..."
-        disabled
+        placeholder="Ask anything about your hotels…"
+        :disabled="loading"
+        class="flex-1 bg-[#F8F9FB] border border-slate-200 rounded-xl px-4 py-2.5
+               text-[0.92rem] text-slate-800 placeholder-slate-400
+               outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+               disabled:opacity-50 transition-all"
       />
-    </div>
+      <button type="submit" :disabled="loading || !input.trim()"
+              class="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white
+                     rounded-xl px-4 py-2.5 transition-colors cursor-pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+  </div>
 
-    <script>
-      const iconMap = {
-        revenue: "fa-chart-line",
-        profit: "fa-dollar-sign",
-        occupancy: "fa-bed",
-        guests: "fa-users",
-        rating: "fa-star",
-        revpar: "fa-chart-bar",
-        ADR: "fa-tags",
-        costs: "fa-calculator",
-        "no show": "fa-user-slash",
-        waitlist: "fa-list",
-        cancellation: "fa-times-circle",
-        booking: "fa-calendar-check",
-      };
+</div>
 
-      const getIcon = (text) => {
-        const lower = text.toLowerCase();
-        for (const [key, icon] of Object.entries(iconMap)) {
-          if (lower.includes(key)) return icon;
+<script>
+function dashboard() {
+  return {
+    insights: [],
+    messages: [],
+    input: '',
+    loading: false,
+    cardColors: ['#6366F1', '#10B981', '#F59E0B'],
+    chips: [
+      'Which hotel had the best occupancy YoY?',
+      'What drove the revenue change?',
+      'Summarise all key metrics',
+    ],
+
+    async init() {
+      try {
+        const res = await fetch('/api/insights');
+        const data = await res.json();
+        this.insights = data.insights || [];
+      } catch (e) {
+        console.error('Failed to load insights:', e);
+      }
+    },
+
+    render(text) {
+      return marked.parse(text);
+    },
+
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const el = this.$refs.messageList;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    },
+
+    async sendMessage(text) {
+      const message = (text !== undefined ? text : this.input).trim();
+      if (!message || this.loading) return;
+
+      this.input = '';
+      const history = this.messages.map(m => ({ role: m.role, content: m.content }));
+      this.messages.push({ id: Date.now(), role: 'user', content: message });
+      this.loading = true;
+      this.scrollToBottom();
+
+      const assistant = { id: Date.now() + 1, role: 'assistant', content: '' };
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history }),
+        });
+
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+        this.messages.push(assistant);
+        this.loading = false;
+        this.scrollToBottom();
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep any incomplete trailing line
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const raw = line.slice(6).trim();
+            if (!raw) continue;
+
+            let token = '';
+            try {
+              const blocks = JSON.parse(raw);
+              if (Array.isArray(blocks)) {
+                token = blocks
+                  .filter(b => b.type === 'text')
+                  .map(b => b.text)
+                  .join('');
+              } else {
+                token = raw;
+              }
+            } catch {
+              token = raw; // plain text fallback
+            }
+
+            if (token) {
+              const idx = this.messages.findIndex(m => m.id === assistant.id);
+              if (idx !== -1) this.messages[idx].content += token;
+              this.scrollToBottom();
+            }
+          }
         }
-        return "fa-info-circle";
-      };
-
-      fetch("insights.json")
-        .then((response) => response.json())
-        .then((data) => {
-          const container = document.getElementById("cards-container");
-          data.insights.forEach((insight) => {
-            const card = document.createElement("div");
-            card.className = "card";
-            const icon = getIcon(insight.text);
-            card.innerHTML = `
-              <div class="card-icon"><i class="fas ${icon}"></i></div>
-              <div class="card-value">${insight.value}</div>
-              <p class="card-text">${insight.text}</p>
-            `;
-            container.appendChild(card);
-          });
-        })
-        .catch((error) => console.error("Error loading insights:", error));
-    </script>
-  </body>
+      } catch (err) {
+        this.loading = false;
+        const errIdx = this.messages.findIndex(m => m.id === assistant.id);
+        if (errIdx !== -1) {
+          this.messages[errIdx].content = 'Something went wrong. Please try again.';
+        } else {
+          assistant.content = 'Something went wrong. Please try again.';
+          this.messages.push(assistant);
+        }
+        this.scrollToBottom();
+      }
+    },
+  };
+}
+</script>
+</body>
 </html>
