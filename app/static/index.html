@@ -66,8 +66,8 @@
   </style>
 </head>
 
-<body class="bg-[#F8F9FB] min-h-screen" x-data="dashboard()" x-init="init()">
-<div class="max-w-5xl mx-auto px-7 py-6">
+<body class="bg-[#F8F9FB] h-screen flex flex-col overflow-hidden" x-data="dashboard()" x-init="init()">
+<div class="max-w-5xl w-full mx-auto px-7 py-6 flex flex-col flex-1 min-h-0">
 
   <!-- ── Header ── -->
   <div class="flex items-center justify-between pb-4 mb-5" style="border-bottom: 1px solid rgba(0,0,0,0.08)">
@@ -103,7 +103,7 @@
   </div>
 
   <!-- ── Chat ── -->
-  <div style="border-top: 1px solid rgba(0,0,0,0.06)" class="pt-5">
+  <div style="border-top: 1px solid rgba(0,0,0,0.06)" class="pt-5 flex flex-col flex-1 min-h-0">
     <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500 mb-4">AI Analyst</p>
 
     <!-- Suggestion chips (empty state) -->
@@ -122,7 +122,7 @@
     </div>
 
     <!-- Message list -->
-    <div class="space-y-2 mb-4 overflow-y-auto max-h-[420px]" x-ref="messageList">
+    <div class="space-y-2 mb-4 overflow-y-auto flex-1 min-h-0" x-ref="messageList">
       <template x-for="msg in messages" :key="msg.id">
         <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
           <div class="max-w-[82%] rounded-xl px-4 py-3 text-[0.95rem] leading-relaxed text-slate-800 border"
