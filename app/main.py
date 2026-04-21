@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from agent.agent import build_agent  # noqa: E402
 from agent.system_prompt import SYSTEM_PROMPT  # noqa: E402
+from insights.db import clear_rows  # noqa: E402
 from load_insights import load_insights  # noqa: E402
 
 _insights: dict = {}
@@ -31,13 +32,7 @@ _agent = None
 async def lifespan(app: FastAPI):
     global _insights, _agent
     _insights = load_insights()
-    context_lines = "\n".join(
-        f"- {item['text']}: {item['value']}" for item in _insights.get("insights", [])
-    )
-    system_prompt_with_context = (
-        f"{SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
-    )
-    _agent = build_agent(system_prompt=system_prompt_with_context)
+    _agent = _build_agent_with_context(_insights)
     yield
 
 
@@ -47,8 +42,26 @@ app = FastAPI(lifespan=lifespan)
 # ── API ────────────────────────────────────────────────────────────────────
 
 
+def _build_agent_with_context(insights: dict):
+    context_lines = "\n".join(
+        f"- {item['text']}: {item['value']}" for item in insights.get("insights", [])
+    )
+    return build_agent(
+        system_prompt=f"{SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
+    )
+
+
 @app.get("/api/insights")
 async def get_insights() -> JSONResponse:
+    return JSONResponse(_insights)
+
+
+@app.post("/api/insights/refresh")
+async def refresh_insights() -> JSONResponse:
+    global _insights, _agent
+    clear_rows()
+    _insights = load_insights()
+    _agent = _build_agent_with_context(_insights)
     return JSONResponse(_insights)
 
 

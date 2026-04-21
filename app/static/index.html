@@ -88,16 +88,52 @@
   </div>
 
   <!-- ── KPI Cards ── -->
+  <div class="flex items-center justify-between mb-3">
+    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500">Key Insights</p>
+    <button @click="refreshInsights()" :disabled="refreshing"
+            class="flex items-center gap-1.5 text-[0.75rem] text-slate-500 hover:text-indigo-600
+                   disabled:opacity-40 transition-colors cursor-pointer">
+      <svg :class="refreshing ? 'animate-spin' : ''"
+           width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M23 4v6h-6"/>
+        <path d="M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      <span x-text="refreshing ? 'Regenerating…' : 'Refresh insights'"></span>
+    </button>
+  </div>
   <div class="grid grid-cols-3 gap-3 mb-6">
     <template x-for="(card, i) in insights" :key="i">
       <div class="bg-white rounded-xl p-5 border border-slate-200"
-           :style="`border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`">
-        <p class="text-[0.72rem] font-medium tracking-wide uppercase text-slate-500 mb-2.5 leading-snug"
-           x-text="card.text"></p>
+           :style="`position: relative; border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`">
+        <div class="flex items-center gap-1 mb-2.5">
+          <p class="text-[0.72rem] font-medium tracking-wide uppercase text-slate-500 leading-snug flex-1"
+             x-text="card.text"></p>
+          <!-- Info icon -->
+          <div x-show="!!card.recommendation"
+               class="flex-shrink-0 flex items-center justify-center w-6 h-6 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
+               @mouseenter="activeTip = i"
+               @mouseleave="setTimeout(() => { if (activeTip === i) activeTip = null }, 150)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="8"/>
+              <line x1="12" y1="12" x2="12" y2="16"/>
+            </svg>
+          </div>
+        </div>
         <p class="font-bold text-slate-800 mb-3.5 leading-tight break-words"
            :class="card.value.length > 18 ? 'text-xl' : card.value.length > 10 ? 'text-[1.9rem]' : 'text-[2.5rem]'"
            x-text="card.value"></p>
         <div class="h-px bg-slate-100"></div>
+        <!-- Recommendation tooltip -->
+        <div x-show="activeTip === i"
+             x-transition
+             class="absolute top-full mt-1.5 z-50 bg-slate-800 text-white text-[0.78rem] leading-snug rounded-lg px-3 py-2.5 shadow-lg w-56"
+             :class="i % 3 === 2 ? 'right-0' : 'left-0'"
+             @mouseenter="activeTip = i"
+             @mouseleave="setTimeout(() => { if (activeTip === i) activeTip = null }, 150)"
+             x-text="card.recommendation">
+        </div>
       </div>
     </template>
   </div>
@@ -175,9 +211,11 @@
 function dashboard() {
   return {
     insights: [],
+    activeTip: null,
     messages: [],
     input: '',
     loading: false,
+    refreshing: false,
     cardColors: ['#6366F1', '#10B981', '#F59E0B'],
     chips: [
       'Which hotel had the best occupancy YoY?',
@@ -204,6 +242,21 @@ function dashboard() {
         const el = this.$refs.messageList;
         if (el) el.scrollTop = el.scrollHeight;
       });
+    },
+
+    async refreshInsights() {
+      if (this.refreshing) return;
+      this.refreshing = true;
+      try {
+        const res = await fetch('/api/insights/refresh', { method: 'POST' });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+        this.insights = data.insights || [];
+      } catch (e) {
+        console.error('Failed to refresh insights:', e);
+      } finally {
+        this.refreshing = false;
+      }
     },
 
     async sendMessage(text) {

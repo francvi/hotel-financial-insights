@@ -1,6 +1,4 @@
 from langchain_ollama import ChatOllama
-from pydantic import BaseModel
-
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -9,6 +7,9 @@ class InsightItem(BaseModel):
     text: str = Field(..., description="Human-readable insight text")
     value: str = Field(
         ..., description="Numeric or textual value associated with the insight"
+    )
+    recommendation: str = Field(
+        ..., description="1-2 sentence actionable next step tied to this specific insight"
     )
 
 
@@ -31,7 +32,8 @@ def gen_insight(kpi_results: str) -> LLMInsightsResponse:
 
         **text**: 1-2 sentences describing the finding/insight.
         **value**: Key numeric value/metric of the insight. For example: "-45%", "+1000 USD", "<0.7", etc.
-        
+        **recommendation**: 1-2 sentences describing a concrete, actionable next step the hotel management should take based on this specific insight.
+
         [KPIs]
         {kpi_results}
         """

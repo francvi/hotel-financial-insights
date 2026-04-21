@@ -1,0 +1,30 @@
+HOTEL,CONTINENTE,PAIS,CATEGORIA,TOTAL_HABITACIONES
+Hotel Aurora,EUROPA,ESP,5*,151
+Hotel Boreal,EUROPA,ESP,5*,379
+Hotel Borealis,EUROPA,ESP,,119
+Hotel Celeste,EUROPA,ESP,5*,111
+Hotel Cosmos,EUROPA,ESP,5*,415
+Hotel Delfos,EUROPA,ESP,5*,954
+Hotel Eclipse,AMERICA,MEX,5*,115
+Hotel Estrella,AMERICA,USA,5*,134
+Hotel Fenix,AMERICA,MEX,5*,1146
+Hotel Galena,EUROPA,ESP,5*,841
+Hotel Garden,EUROPA,ESP,5*,624
+Hotel Helios,EUROPA,ITA,5*,469
+Hotel Iris,EUROPA,ESP,,383
+Hotel Kaleido,AMERICA,JAM,5*,1054
+Hotel Luna,EUROPA,ESP,4*,204
+Hotel Mirador Real,EUROPA,ESP,4*,125
+Hotel Nereida,EUROPA,ESP,5*,93
+Hotel Palacio,AMERICA,BRA,5*,654
+Hotel Riviera,EUROPA,ESP,4*,150
+Hotel Solaris,EUROPA,ESP,4*,264
+Hotel Suites,EUROPA,ESP,5*,221
+Hotel Titanium,EUROPA,MEX,4*,315
+Hotel Ulises,EUROPA,ESP,4*,166
+Hotel Vega,AMERICA,RD,5*,1986
+Hotel Vega Mar,EUROPA,ESP,5*,191
+Hotel Windrose,AMERICA,MEX,5*,510
+Hotel Xenon,AMERICA,MEX,5*,1554
+Hotel Yaris,EUROPA,MEX,5*,13
+Hotel Zenith,AMERICA,RD,4*,271
