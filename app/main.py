@@ -12,7 +12,7 @@ from typing import Literal
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
@@ -44,7 +44,7 @@ app = FastAPI(lifespan=lifespan)
 
 def _build_agent_with_context(insights: dict):
     context_lines = "\n".join(
-        f"- {item['text']}: {item['value']}" for item in insights.get("insights", [])
+        f"- {item['text_en']}: {item['value']}" for item in insights.get("insights", [])
     )
     return build_agent(
         system_prompt=f"{SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
@@ -70,14 +70,22 @@ class HistoryItem(BaseModel):
     content: str = Field(max_length=4000)
 
 
+LANG_SYSTEM: dict[str, str] = {
+    "en": "Respond entirely in English.",
+    "es": "Responde completamente en español.",
+}
+
+
 class ChatRequest(BaseModel):
     message: str = Field(max_length=4000)
     history: list[HistoryItem] = Field(default=[], max_length=20)
+    language: str = "en"
 
 
 @app.post("/api/chat")
 async def chat(body: ChatRequest) -> EventSourceResponse:
-    messages = []
+    lang_msg = SystemMessage(content=LANG_SYSTEM.get(body.language, LANG_SYSTEM["en"]))
+    messages = [lang_msg]
     for turn in body.history:
         cls = HumanMessage if turn.role == "user" else AIMessage
         messages.append(cls(content=turn.content))
