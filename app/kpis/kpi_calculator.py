@@ -11,81 +11,110 @@ sqlite_db = os.path.join(base_dir, DB_NAME)
 
 
 class KpiService:
-    """
-    A class to connect to SQLite and calculate occupancy rate KPIs with separate overall and per-hotel functions.
-    """
-
-    def __init__(self, db_path: str, table_name: str = "hotel_kpi"):
+    def __init__(self, db_path: str):
         self.db_path = db_path
-        self.table_name = table_name
         self.df = None
         self._load_data()
 
     def _load_data(self):
         conn = sqlite3.connect(self.db_path)
-        self.df = pd.read_sql_query(f"SELECT * FROM {self.table_name}", conn)
-        self.df["month"] = pd.to_datetime(self.df["month"])
+        pnl = pd.read_sql_query("SELECT * FROM pnl", conn)
+        hotels = pd.read_sql_query("SELECT * FROM hotels", conn)
         conn.close()
-        self.df["occupancy_pct"] = self.df["occupancy_rate"] * 100
 
-    def overall_occupancy_rate(self) -> dict:
-        df = self.df.copy()
-        df["year"] = df["month"].dt.year
-        latest_year = df["year"].max()
-        prev_year = latest_year - 1
+        df = pnl.merge(hotels, on="HOTEL", how="left")
+        # Drop rows with no operations (seasonal closures / future REAL placeholders)
+        df = df[df["HABITACIONES"] > 0].copy()
 
-        yearly = df.groupby("year")["occupancy_pct"].mean().reset_index()
-        yearly["YoY"] = yearly["occupancy_pct"].diff()
+        df["OCC"] = df["RN"] / df["HABITACIONES"]
+        df["ADR"] = df["ROOMS_REVENUE"] / df["RN"].replace(0, pd.NA)
+        df["REVPAR"] = df["ROOMS_REVENUE"] / df["HABITACIONES"]
+        df["GOP_MARGIN"] = df["GOP"] / df["OPERATING_REVENUE"].replace(0, pd.NA)
 
-        monthly_df = df[df["year"] == latest_year].copy()
-        monthly_df["month"] = monthly_df["month"].dt.to_period("M").astype(str)
-        monthly = monthly_df.groupby("month")["occupancy_pct"].mean().reset_index()
-        monthly["YoY"] = monthly["occupancy_pct"].diff()
+        self.df = df
 
-        return {"yearly": yearly, "monthly": monthly}
+    def _agg_real_budget(self, group_cols: list, metric_cols: list) -> pd.DataFrame:
+        real = self.df[self.df["ESCENARIO"] == "REAL"].groupby(group_cols)[metric_cols].mean()
+        budget = self.df[self.df["ESCENARIO"] == "BUDGET"].groupby(group_cols)[metric_cols].mean()
 
-    def occupancy_rate_by_hotel(self) -> dict:
-        df = self.df.copy()
-        df["year"] = df["month"].dt.year
-        latest_year = df["year"].max()
+        merged = real.join(budget, lsuffix="_REAL", rsuffix="_BUDGET").reset_index()
+        for col in metric_cols:
+            merged[f"{col}_VAR"] = merged[f"{col}_REAL"] - merged[f"{col}_BUDGET"]
+        return merged
 
-        yearly = (
-            df.groupby(["hotel_name", "year"])["occupancy_pct"].mean().reset_index()
-        )
-        yearly["YoY"] = yearly.groupby("hotel_name")["occupancy_pct"].diff()
+    def overall_kpis_annual(self) -> pd.DataFrame:
+        return self._agg_real_budget(["ANIO"], ["OCC", "ADR", "REVPAR", "GOP", "GOP_MARGIN"])
 
-        monthly_df = df[df["year"] == latest_year].copy()
-        monthly_df["month"] = monthly_df["month"].dt.to_period("M").astype(str)
-        monthly = (
-            monthly_df.groupby(["hotel_name", "month"])["occupancy_pct"]
-            .mean()
-            .reset_index()
-        )
-        monthly["YoY"] = monthly.groupby("hotel_name")["occupancy_pct"].diff()
+    def kpis_by_hotel_annual(self) -> pd.DataFrame:
+        return self._agg_real_budget(["HOTEL", "ANIO"], ["OCC", "ADR", "REVPAR", "GOP", "GOP_MARGIN"])
 
-        return {"yearly": yearly, "monthly": monthly}
+    def kpis_monthly(self, year: int = 2025) -> pd.DataFrame:
+        df = self.df[self.df["ANIO"] == year]
 
-    def format_occupancy_markdown(self) -> str:
-        """
-        Formats overall and by hotel occupancy rate into markdown tables suitable for LLM consumption.
-        """
-        overall = self.overall_occupancy_rate()
-        by_hotel = self.occupancy_rate_by_hotel()
+        real = df[df["ESCENARIO"] == "REAL"].groupby("MES")[["OCC", "ADR", "REVPAR", "GOP_MARGIN"]].mean()
+        budget = df[df["ESCENARIO"] == "BUDGET"].groupby("MES")[["OCC", "ADR", "REVPAR", "GOP_MARGIN"]].mean()
 
-        md = "## Overall Occupancy Rate\n"
-        md += "### Yearly\n"
-        md += overall["yearly"].to_markdown(index=False) + "\n\n"
-        md += "### Monthly\n"
-        md += overall["monthly"].to_markdown(index=False) + "\n\n"
+        merged = real.join(budget, lsuffix="_REAL", rsuffix="_BUDGET").reset_index()
+        for col in ["OCC", "ADR", "REVPAR", "GOP_MARGIN"]:
+            merged[f"{col}_VAR"] = merged[f"{col}_REAL"] - merged[f"{col}_BUDGET"]
+        return merged
 
-        md += "## Occupancy Rate by Hotel\n"
-        md += "### Yearly\n"
-        md += by_hotel["yearly"].to_markdown(index=False) + "\n\n"
-        md += "### Monthly\n"
-        md += by_hotel["monthly"].to_markdown(index=False) + "\n"
+    def format_kpi_markdown(self) -> str:
+        annual = self.overall_kpis_annual()
+        by_hotel = self.kpis_by_hotel_annual()
+        monthly = self.kpis_monthly(year=2025)
+
+        def pct(val):
+            if pd.isna(val):
+                return "N/A"
+            return f"{val * 100:.1f}%"
+
+        def usd(val):
+            if pd.isna(val):
+                return "N/A"
+            return f"{val:.2f}"
+
+        # Overall annual
+        md = "## Overall Annual KPIs (REAL vs BUDGET)\n"
+        rows = []
+        for _, r in annual.iterrows():
+            rows.append({
+                "Year": int(r["ANIO"]),
+                "Occ_Real": pct(r.get("OCC_REAL")), "Occ_Bdg": pct(r.get("OCC_BUDGET")), "Occ_Var": pct(r.get("OCC_VAR")),
+                "ADR_Real": usd(r.get("ADR_REAL")), "ADR_Bdg": usd(r.get("ADR_BUDGET")),
+                "RevPAR_Real": usd(r.get("REVPAR_REAL")), "RevPAR_Bdg": usd(r.get("REVPAR_BUDGET")),
+                "GOP_Margin_Real": pct(r.get("GOP_MARGIN_REAL")), "GOP_Margin_Bdg": pct(r.get("GOP_MARGIN_BUDGET")),
+            })
+        md += pd.DataFrame(rows).to_markdown(index=False) + "\n\n"
+
+        # Monthly 2025
+        md += "## Monthly KPIs 2025 (REAL vs BUDGET)\n"
+        mrows = []
+        for _, r in monthly.iterrows():
+            mrows.append({
+                "Month": int(r["MES"]),
+                "Occ_Real": pct(r.get("OCC_REAL")), "Occ_Bdg": pct(r.get("OCC_BUDGET")), "Occ_Var": pct(r.get("OCC_VAR")),
+                "ADR_Real": usd(r.get("ADR_REAL")), "ADR_Var": usd(r.get("ADR_VAR")),
+                "RevPAR_Real": usd(r.get("REVPAR_REAL")), "RevPAR_Var": usd(r.get("REVPAR_VAR")),
+                "GOP_Margin_Real": pct(r.get("GOP_MARGIN_REAL")), "GOP_Margin_Var": pct(r.get("GOP_MARGIN_VAR")),
+            })
+        md += pd.DataFrame(mrows).to_markdown(index=False) + "\n\n"
+
+        # By hotel 2025 REAL
+        real_2025 = self.df[(self.df["ESCENARIO"] == "REAL") & (self.df["ANIO"] == 2025)]
+        hotel_summary = real_2025.groupby("HOTEL")[["OCC", "ADR", "REVPAR", "GOP_MARGIN", "GOP"]].mean().reset_index()
+        hotel_summary = hotel_summary.sort_values("REVPAR", ascending=False)
+        hotel_summary["OCC"] = hotel_summary["OCC"].apply(pct)
+        hotel_summary["ADR"] = hotel_summary["ADR"].apply(usd)
+        hotel_summary["REVPAR"] = hotel_summary["REVPAR"].apply(usd)
+        hotel_summary["GOP_MARGIN"] = hotel_summary["GOP_MARGIN"].apply(pct)
+        hotel_summary["GOP"] = hotel_summary["GOP"].apply(lambda v: f"{v:,.0f}")
+        hotel_summary.columns = ["Hotel", "Occ", "ADR", "RevPAR", "GOP_Margin", "GOP_Avg"]
+
+        md += "## Hotel Ranking 2025 REAL (by RevPAR)\n"
+        md += hotel_summary.to_markdown(index=False) + "\n"
 
         return md
 
 
 kpi_service = KpiService(db_path=sqlite_db)
-markdown_output = kpi_service.format_occupancy_markdown()

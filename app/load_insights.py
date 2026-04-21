@@ -1,22 +1,27 @@
-import json
-from pathlib import Path
+import sqlite3
 
-from insights.insights_generator import gen_insight
+from pydantic import ValidationError
+
+from insights.db import DB_PATH, clear_rows, init_db, read_from_db, write_to_db
+from insights.insights_generator import LLMInsightsResponse, gen_insight
 from kpis.kpi_calculator import kpi_service
-
-# Always read and write the same file so the cache is reused across restarts
-_CACHE = Path(__file__).parent / "insights.json"
 
 
 def load_insights() -> dict:
-    if _CACHE.exists():
-        with open(_CACHE) as f:
-            return json.load(f)
+    init_db()
 
-    kpis_data = kpi_service.format_occupancy_markdown()
+    try:
+        raw = read_from_db()
+        if raw is not None:
+            LLMInsightsResponse.model_validate(raw)
+            return raw
+    except ValidationError:
+        clear_rows()
+    except sqlite3.Error:
+        DB_PATH.unlink(missing_ok=True)
+        init_db()
+
+    kpis_data = kpi_service.format_kpi_markdown()
     data = gen_insight(kpi_results=kpis_data)
-
-    with open(_CACHE, "w", encoding="utf-8") as f:
-        f.write(data.model_dump_json())
-
+    write_to_db(data)
     return data.model_dump()

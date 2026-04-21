@@ -81,34 +81,81 @@
       <span class="text-[0.95rem] font-semibold text-slate-800 tracking-tight">Hotel Performance</span>
       <span class="text-[0.78rem] text-slate-400">/ Financial Dashboard</span>
     </div>
-    <div class="flex items-center gap-1.5">
-      <div class="w-[5px] h-[5px] rounded-full bg-emerald-400" style="box-shadow:0 0 6px rgba(52,211,153,0.5)"></div>
-      <span class="text-[0.7rem] tracking-widest text-slate-400 uppercase">Live</span>
+    <div class="flex items-center gap-3">
+      <!-- Language toggle -->
+      <div class="flex items-center bg-slate-100 rounded-lg p-0.5 text-[0.72rem] font-medium">
+        <button @click="setLanguage('en')"
+                :class="language === 'en' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+                class="px-2.5 py-1 rounded-md transition-all cursor-pointer">EN</button>
+        <button @click="setLanguage('es')"
+                :class="language === 'es' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+                class="px-2.5 py-1 rounded-md transition-all cursor-pointer">ES</button>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-[5px] h-[5px] rounded-full bg-emerald-400" style="box-shadow:0 0 6px rgba(52,211,153,0.5)"></div>
+        <span class="text-[0.7rem] tracking-widest text-slate-400 uppercase">Live</span>
+      </div>
     </div>
   </div>
 
   <!-- ── KPI Cards ── -->
+  <div class="flex items-center justify-between mb-3">
+    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500" x-text="t('insights')"></p>
+    <button @click="refreshInsights()" :disabled="refreshing"
+            class="flex items-center gap-1.5 text-[0.75rem] text-slate-500 hover:text-indigo-600
+                   disabled:opacity-40 transition-colors cursor-pointer">
+      <svg :class="refreshing ? 'animate-spin' : ''"
+           width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M23 4v6h-6"/>
+        <path d="M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      <span x-text="refreshing ? t('regenerating') : t('refreshInsights')"></span>
+    </button>
+  </div>
   <div class="grid grid-cols-3 gap-3 mb-6">
     <template x-for="(card, i) in insights" :key="i">
       <div class="bg-white rounded-xl p-5 border border-slate-200"
-           :style="`border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`">
-        <p class="text-[0.72rem] font-medium tracking-wide uppercase text-slate-500 mb-2.5 leading-snug"
-           x-text="card.text"></p>
+           :style="`position: relative; border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`">
+        <div class="flex items-center gap-1 mb-2.5">
+          <p class="text-[0.72rem] font-medium tracking-wide uppercase text-slate-500 leading-snug flex-1"
+             x-text="language === 'es' ? card.text_es : card.text_en"></p>
+          <!-- Info icon -->
+          <div x-show="!!(language === 'es' ? card.recommendation_es : card.recommendation_en)"
+               class="flex-shrink-0 flex items-center justify-center w-6 h-6 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
+               @mouseenter="activeTip = i"
+               @mouseleave="setTimeout(() => { if (activeTip === i) activeTip = null }, 150)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="8"/>
+              <line x1="12" y1="12" x2="12" y2="16"/>
+            </svg>
+          </div>
+        </div>
         <p class="font-bold text-slate-800 mb-3.5 leading-tight break-words"
            :class="card.value.length > 18 ? 'text-xl' : card.value.length > 10 ? 'text-[1.9rem]' : 'text-[2.5rem]'"
            x-text="card.value"></p>
         <div class="h-px bg-slate-100"></div>
+        <!-- Recommendation tooltip -->
+        <div x-show="activeTip === i"
+             x-transition
+             class="absolute top-full mt-1.5 z-50 bg-slate-800 text-white text-[0.78rem] leading-snug rounded-lg px-3 py-2.5 shadow-lg w-56"
+             :class="i % 3 === 2 ? 'right-0' : 'left-0'"
+             @mouseenter="activeTip = i"
+             @mouseleave="setTimeout(() => { if (activeTip === i) activeTip = null }, 150)"
+             x-text="language === 'es' ? card.recommendation_es : card.recommendation_en">
+        </div>
       </div>
     </template>
   </div>
 
   <!-- ── Chat ── -->
   <div style="border-top: 1px solid rgba(0,0,0,0.06)" class="pt-5 flex flex-col flex-1 min-h-0">
-    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500 mb-4">AI Analyst</p>
+    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500 mb-4" x-text="t('aiAnalyst')"></p>
 
     <!-- Suggestion chips (empty state) -->
     <div x-show="messages.length === 0 && !loading">
-      <p class="text-[0.85rem] font-light text-slate-400 mb-3">Not sure where to start? Try one of these —</p>
+      <p class="text-[0.85rem] font-light text-slate-400 mb-3" x-text="t('chipHint')"></p>
       <div class="flex flex-wrap gap-2 mb-4">
         <template x-for="chip in chips" :key="chip">
           <button @click="sendMessage(chip)"
@@ -151,7 +198,7 @@
       <input
         x-model="input"
         type="text"
-        placeholder="Ask anything about your hotels…"
+        :placeholder="t('inputPlaceholder')"
         :disabled="loading"
         class="flex-1 bg-[#F8F9FB] border border-slate-200 rounded-xl px-4 py-2.5
                text-[0.92rem] text-slate-800 placeholder-slate-400
@@ -172,18 +219,55 @@
 </div>
 
 <script>
-function dashboard() {
-  return {
-    insights: [],
-    messages: [],
-    input: '',
-    loading: false,
-    cardColors: ['#6366F1', '#10B981', '#F59E0B'],
+const I18N = {
+  en: {
+    insights:        'Key Insights',
+    refreshInsights: 'Refresh insights',
+    regenerating:    'Regenerating…',
+    aiAnalyst:       'AI Analyst',
+    chipHint:        'Not sure where to start? Try one of these —',
+    inputPlaceholder:'Ask anything about your hotels…',
     chips: [
-      'Which hotel had the best occupancy YoY?',
+      'Which hotel had the best occupancy?',
       'What drove the revenue change?',
       'Summarise all key metrics',
     ],
+  },
+  es: {
+    insights:        'Insights Clave',
+    refreshInsights: 'Regenerar insights',
+    regenerating:    'Regenerando…',
+    aiAnalyst:       'Analista IA',
+    chipHint:        '¿No sabes por dónde empezar? Prueba una de estas —',
+    inputPlaceholder:'Pregunta lo que quieras sobre tus hoteles…',
+    chips: [
+      '¿Qué hotel tuvo mejor ocupación?',
+      '¿Qué impulsó el cambio en ingresos?',
+      'Resume todas las métricas clave',
+    ],
+  },
+};
+
+function dashboard() {
+  return {
+    insights: [],
+    activeTip: null,
+    messages: [],
+    input: '',
+    loading: false,
+    refreshing: false,
+    language: localStorage.getItem('lang') || 'en',
+    cardColors: ['#6366F1', '#10B981', '#F59E0B'],
+
+    t(key) { return I18N[this.language]?.[key] ?? I18N.en[key]; },
+
+    get chips() { return I18N[this.language]?.chips ?? I18N.en.chips; },
+
+    setLanguage(lang) {
+      if (lang === this.language) return;
+      this.language = lang;
+      localStorage.setItem('lang', lang);
+    },
 
     async init() {
       try {
@@ -206,6 +290,21 @@ function dashboard() {
       });
     },
 
+    async refreshInsights() {
+      if (this.refreshing) return;
+      this.refreshing = true;
+      try {
+        const res = await fetch('/api/insights/refresh', { method: 'POST' });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+        this.insights = data.insights || [];
+      } catch (e) {
+        console.error('Failed to refresh insights:', e);
+      } finally {
+        this.refreshing = false;
+      }
+    },
+
     async sendMessage(text) {
       const message = (text !== undefined ? text : this.input).trim();
       if (!message || this.loading) return;
@@ -222,7 +321,7 @@ function dashboard() {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, history }),
+          body: JSON.stringify({ message, history, language: this.language }),
         });
 
         if (!res.ok) throw new Error(`Server error ${res.status}`);
