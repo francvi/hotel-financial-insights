@@ -212,11 +212,15 @@
             <template x-if="msg.toolCalls && msg.toolCalls.length > 0">
               <div class="flex flex-wrap gap-1.5 mb-2">
                 <template x-for="tc in msg.toolCalls" :key="tc.name">
-                  <span class="inline-flex items-center gap-1 text-[0.7rem] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full px-2.5 py-0.5">
+                  <span class="relative inline-flex items-center gap-1 text-[0.7rem] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full px-2.5 py-0.5 cursor-default group/tc">
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                     </svg>
                     <span x-text="tc.label"></span>
+                    <!-- Tooltip -->
+                    <span class="pointer-events-none absolute bottom-full left-0 mb-1.5 w-56 rounded-lg bg-slate-800 px-3 py-2 text-[0.72rem] font-normal text-white leading-snug shadow-lg
+                                 opacity-0 group-hover/tc:opacity-100 transition-opacity duration-150 z-50"
+                          x-text="tc.desc"></span>
                   </span>
                 </template>
               </div>
@@ -358,11 +362,23 @@ function dashboard() {
 
     toolLabel(name) {
       const map = {
-        overall_kpis_annual: 'Annual KPIs',
-        kpis_by_hotel_annual: 'Hotel KPIs',
-        kpis_monthly: 'Monthly KPIs',
+        overall_kpis_annual: {
+          label: 'Annual KPIs',
+          desc: 'Fetched aggregated occupancy, ADR, RevPAR, and GOP across all hotels by year — real vs. budget.',
+        },
+        kpis_by_hotel_annual: {
+          label: 'Hotel KPIs',
+          desc: 'Fetched per-hotel annual performance: occupancy, ADR, RevPAR, and GOP margin broken down by property.',
+        },
+        kpis_monthly: {
+          label: 'Monthly KPIs',
+          desc: 'Fetched month-by-month KPIs for the selected year, including occupancy, ADR, RevPAR, and GOP margin vs. budget.',
+        },
       };
-      return map[name] || name.replace(/_/g, ' ');
+      const entry = map[name];
+      return entry
+        ? { label: entry.label, desc: entry.desc }
+        : { label: name.replace(/_/g, ' '), desc: `Called tool: ${name}` };
     },
 
     scrollToBottom() {
@@ -455,9 +471,9 @@ function dashboard() {
 
               for (const block of blocks) {
                 if (block.type === 'tool_use') {
-                  const label = this.toolLabel(block.name);
+                  const { label, desc } = this.toolLabel(block.name);
                   if (!assistant.toolCalls.find(tc => tc.name === block.name)) {
-                    assistant.toolCalls.push({ name: block.name, label });
+                    assistant.toolCalls.push({ name: block.name, label, desc });
                   }
                   if (pushed) {
                     const idx = this.messages.findIndex(m => m.id === assistant.id);
