@@ -49,8 +49,8 @@ def gen_insight(kpi_results: str) -> LLMInsightsResponse:
 
         [OUTPUT]
 
-        **text_en**: 1-2 sentences describing the finding/insight in English.
-        **text_es**: 1-2 sentences describing the finding/insight in Spanish.
+        **text_en**: 1-2 sentences describing the finding/insight in English. Include clear references to the analysed period (month, year) if apply.
+        **text_es**: 1-2 sentences describing the finding/insight in Spanish. Include clear references to the analysed period (month, year) if apply.
         **value**: Key numeric value/metric of the insight. Language-agnostic. For example: "-45%", "+1000 USD", "<0.7", etc.
         **recommendation_en**: 1-2 sentences with a concrete, actionable next step in English.
         **recommendation_es**: 1-2 sentences with a concrete, actionable next step in Spanish.

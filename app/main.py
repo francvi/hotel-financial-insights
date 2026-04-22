@@ -12,7 +12,7 @@ from typing import Literal
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
@@ -22,17 +22,21 @@ sys.path.insert(0, str(Path(__file__).parent))
 from agent.agent import build_agent  # noqa: E402
 from agent.system_prompt import SYSTEM_PROMPT  # noqa: E402
 from insights.db import clear_rows  # noqa: E402
+from suggestions.db import clear as clear_suggestions  # noqa: E402
 from load_insights import load_insights  # noqa: E402
+from load_suggestions import load_suggestions  # noqa: E402
 from kpis import kpi_service
 
 _insights: dict = {}
+_suggestions: dict = {}
 _agent = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _insights, _agent
+    global _insights, _suggestions, _agent
     _insights = load_insights()
+    _suggestions = load_suggestions()
     _agent = _build_agent_with_context(_insights)
     yield
 
@@ -60,18 +64,33 @@ async def get_insights() -> JSONResponse:
     return JSONResponse(_insights)
 
 
+@app.get("/api/suggestions")
+async def get_suggestions() -> JSONResponse:
+    return JSONResponse(_suggestions)
+
+
+@app.post("/api/suggestions/refresh")
+async def refresh_suggestions() -> JSONResponse:
+    global _suggestions
+    clear_suggestions()
+    _suggestions = load_suggestions()
+    return JSONResponse(_suggestions)
+
+
 @app.post("/api/insights/refresh")
 async def refresh_insights() -> JSONResponse:
-    global _insights, _agent
+    global _insights, _suggestions, _agent
     clear_rows()
+    clear_suggestions()
     _insights = load_insights()
+    _suggestions = load_suggestions()
     _agent = _build_agent_with_context(_insights)
     return JSONResponse(_insights)
 
 
 class HistoryItem(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(max_length=4000)
+    content: str = Field(max_length=50_000)
 
 
 LANG_SYSTEM: dict[str, str] = {
@@ -96,12 +115,32 @@ async def chat(body: ChatRequest) -> EventSourceResponse:
     messages.append(HumanMessage(content=body.message))
 
     async def token_stream():
+        seen_tool_calls: set[str] = set()
         async for token, _metadata in _agent.astream(
             {"messages": messages}, stream_mode="messages"
         ):
+            if isinstance(token, ToolMessage):
+                continue
+
+            tool_call_chunks = getattr(token, "tool_call_chunks", [])
+            for chunk in tool_call_chunks:
+                call_id = chunk.get("id") or str(chunk.get("index", 0))
+                name = chunk.get("name", "")
+                if name and call_id not in seen_tool_calls:
+                    seen_tool_calls.add(call_id)
+                    yield {"data": json.dumps([{"type": "tool_use", "name": name}])}
+            if tool_call_chunks:
+                continue
+
             blocks = getattr(token, "content_blocks", None)
             if blocks:
-                yield {"data": json.dumps(blocks)}
+                text_blocks = [
+                    b for b in blocks if isinstance(b, dict) and b.get("type") == "text"
+                ]
+                if text_blocks:
+                    yield {"data": json.dumps(text_blocks)}
+            elif isinstance(getattr(token, "content", None), str) and token.content:
+                yield {"data": json.dumps([{"type": "text", "text": token.content}])}
 
     return EventSourceResponse(token_stream())
 
