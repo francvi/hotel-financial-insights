@@ -5,33 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hotel Insights</title>
 
-  <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { outfit: ['Outfit', 'sans-serif'] },
-        }
-      }
+      theme: { extend: { fontFamily: { outfit: ['Outfit', 'sans-serif'] } } }
     }
   </script>
 
-  <!-- Outfit font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- marked.js — markdown renderer -->
   <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js"></script>
-
-  <!-- Alpine.js (pinned) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
   <style>
     body { font-family: 'Outfit', sans-serif; }
 
-    /* Typing indicator dots */
     .dot { animation: dotBounce 1.4s infinite ease-in-out both; }
     .dot:nth-child(1) { animation-delay: 0s; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -41,7 +31,6 @@
       40%           { transform: translateY(-5px); opacity: 1; }
     }
 
-    /* Markdown content in chat bubbles */
     .md p { margin: 0 0 0.5em; }
     .md p:last-child { margin-bottom: 0; }
     .md strong { font-weight: 600; }
@@ -59,7 +48,6 @@
     .md pre code { background: none; padding: 0; }
     .md blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.75em; color: #64748b; margin: 0.5em 0; }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -67,10 +55,10 @@
 </head>
 
 <body class="bg-[#F8F9FB] h-screen flex flex-col overflow-hidden" x-data="dashboard()" x-init="init()">
-<div class="max-w-5xl w-full mx-auto px-7 py-6 flex flex-col flex-1 min-h-0">
+<div class="max-w-5xl w-full mx-auto px-7 py-5 flex flex-col flex-1 min-h-0">
 
-  <!-- ── Header ── -->
-  <div class="flex items-center justify-between pb-4 mb-5" style="border-bottom: 1px solid rgba(0,0,0,0.08)">
+  <!-- Header -->
+  <div class="flex items-center justify-between pb-4 mb-4" style="border-bottom: 1px solid rgba(0,0,0,0.08)">
     <div class="flex items-center gap-2.5">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <rect width="24" height="24" rx="6" fill="rgba(99,102,241,0.12)"/>
@@ -82,7 +70,6 @@
       <span class="text-[0.78rem] text-slate-400">/ Financial Dashboard</span>
     </div>
     <div class="flex items-center gap-3">
-      <!-- Language toggle -->
       <div class="flex items-center bg-slate-100 rounded-lg p-0.5 text-[0.72rem] font-medium">
         <button @click="setLanguage('en')"
                 :class="language === 'en' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
@@ -98,65 +85,113 @@
     </div>
   </div>
 
-  <!-- ── KPI Cards ── -->
-  <div class="flex items-center justify-between mb-3">
+  <!-- KPI Cards -->
+  <div class="flex items-center justify-between mb-2">
     <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500" x-text="t('insights')"></p>
     <button @click="refreshInsights()" :disabled="refreshing"
-            class="flex items-center gap-1.5 text-[0.75rem] text-slate-500 hover:text-indigo-600
-                   disabled:opacity-40 transition-colors cursor-pointer">
-      <svg :class="refreshing ? 'animate-spin' : ''"
-           width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M23 4v6h-6"/>
-        <path d="M1 20v-6h6"/>
+            class="flex items-center gap-1.5 text-[0.75rem] text-slate-500 hover:text-indigo-600 disabled:opacity-40 transition-colors cursor-pointer">
+      <svg :class="refreshing ? 'animate-spin' : ''" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
         <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
       </svg>
       <span x-text="refreshing ? t('regenerating') : t('refreshInsights')"></span>
     </button>
   </div>
-  <div class="grid grid-cols-3 gap-3 mb-6">
+
+  <div class="grid grid-cols-3 gap-3 mb-4">
     <template x-for="(card, i) in insights" :key="i">
-      <div class="bg-white rounded-xl p-5 border border-slate-200"
-           :style="`position: relative; border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`">
-        <div class="flex items-center gap-1 mb-2.5">
-          <p class="text-[0.72rem] font-medium tracking-wide uppercase text-slate-500 leading-snug flex-1"
-             x-text="language === 'es' ? card.text_es : card.text_en"></p>
-          <!-- Info icon -->
-          <div x-show="!!(language === 'es' ? card.recommendation_es : card.recommendation_en)"
-               class="flex-shrink-0 flex items-center justify-center w-6 h-6 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
-               @mouseenter="activeTip = i"
-               @mouseleave="setTimeout(() => { if (activeTip === i) activeTip = null }, 150)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="8"/>
-              <line x1="12" y1="12" x2="12" y2="16"/>
-            </svg>
-          </div>
-        </div>
-        <p class="font-bold text-slate-800 mb-3.5 leading-tight break-words"
-           :class="card.value.length > 18 ? 'text-xl' : card.value.length > 10 ? 'text-[1.9rem]' : 'text-[2.5rem]'"
+      <div class="bg-white rounded-xl border border-slate-200 flex items-center justify-between px-4 py-3 cursor-pointer group"
+           :style="`border-left: 4px solid ${cardColors[i % 3]}; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)`"
+           @click="activeInsight = card">
+        <p class="font-bold text-slate-800 leading-tight"
+           :class="card.value.length > 18 ? 'text-lg' : card.value.length > 10 ? 'text-2xl' : 'text-3xl'"
            x-text="card.value"></p>
-        <div class="h-px bg-slate-100"></div>
-        <!-- Recommendation tooltip -->
-        <div x-show="activeTip === i"
-             x-transition
-             class="absolute top-full mt-1.5 z-50 bg-slate-800 text-white text-[0.78rem] leading-snug rounded-lg px-3 py-2.5 shadow-lg w-56"
-             :class="i % 3 === 2 ? 'right-0' : 'left-0'"
-             @mouseenter="activeTip = i"
-             @mouseleave="setTimeout(() => { if (activeTip === i) activeTip = null }, 150)"
-             x-text="language === 'es' ? card.recommendation_es : card.recommendation_en">
-        </div>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="text-slate-300 group-hover:text-indigo-400 transition-colors shrink-0">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/>
+          <line x1="12" y1="12" x2="12" y2="16" stroke-linecap="round"/>
+        </svg>
       </div>
     </template>
   </div>
 
-  <!-- ── Chat ── -->
-  <div style="border-top: 1px solid rgba(0,0,0,0.06)" class="pt-5 flex flex-col flex-1 min-h-0">
-    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500 mb-4" x-text="t('aiAnalyst')"></p>
+  <!-- Insight modal -->
+  <div x-show="activeInsight"
+       x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-100"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 z-50 flex items-center justify-center p-6"
+       style="background: rgba(0,0,0,0.35)"
+       @click.self="activeInsight = null">
+    <div x-show="activeInsight"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+      <template x-if="activeInsight">
+        <div>
+          <!-- Modal header -->
+          <div class="flex items-start justify-between px-6 pt-5 pb-4" style="border-bottom: 1px solid rgba(0,0,0,0.07)">
+            <div>
+              <p class="text-[0.65rem] font-semibold tracking-widest uppercase text-slate-400 mb-1"
+                 x-text="t('insights')"></p>
+              <p class="text-2xl font-bold text-slate-800" x-text="activeInsight.value"></p>
+            </div>
+            <button @click="activeInsight = null"
+                    class="text-slate-400 hover:text-slate-600 transition-colors mt-0.5 cursor-pointer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Description -->
+          <div class="px-6 py-4">
+            <p class="text-[0.9rem] text-slate-600 leading-relaxed"
+               x-text="language === 'es' ? activeInsight.text_es : activeInsight.text_en"></p>
+          </div>
+          <!-- Recommendation -->
+          <div class="flex items-start gap-2.5 mx-6 mb-5 px-4 py-3 rounded-xl bg-amber-50 border border-amber-100">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="shrink-0 mt-0.5" style="color:#D97706">
+              <path d="M12 2a7 7 0 0 1 7 7c0 3.1-2 5.8-4.9 6.7V17a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1.3C7 14.8 5 12.1 5 9a7 7 0 0 1 7-7z"/>
+              <path d="M9 21h6"/>
+            </svg>
+            <div>
+              <p class="text-[0.65rem] font-semibold tracking-widest uppercase text-amber-600 mb-1"
+                 x-text="language === 'es' ? 'Recomendación' : 'Recommendation'"></p>
+              <p class="text-[0.82rem] text-amber-900 leading-snug"
+                 x-text="language === 'es' ? activeInsight.recommendation_es : activeInsight.recommendation_en"></p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
 
-    <!-- Suggestion chips (empty state) -->
+  <!-- Chat -->
+  <div class="flex flex-col flex-1 min-h-0 pt-4" style="border-top: 1px solid rgba(0,0,0,0.06)">
+    <p class="text-[0.7rem] font-medium tracking-widest uppercase text-slate-500 mb-3" x-text="t('aiAnalyst')"></p>
+
+    <!-- Suggestion chips -->
     <div x-show="messages.length === 0 && !loading">
-      <p class="text-[0.85rem] font-light text-slate-400 mb-3" x-text="t('chipHint')"></p>
-      <div class="flex flex-wrap gap-2 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[0.85rem] font-light text-slate-400" x-text="t('chipHint')"></p>
+        <button @click="refreshChips()" :disabled="refreshingChips"
+                class="flex items-center gap-1.5 text-[0.75rem] text-slate-500 hover:text-indigo-600 disabled:opacity-40 transition-colors cursor-pointer">
+          <svg :class="refreshingChips ? 'animate-spin' : ''" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          <span x-text="t('refreshChips')"></span>
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-3">
         <template x-for="chip in chips" :key="chip">
           <button @click="sendMessage(chip)"
                   class="bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 text-[0.85rem] text-slate-600
@@ -168,16 +203,31 @@
       </div>
     </div>
 
-    <!-- Message list -->
-    <div class="space-y-2 mb-4 overflow-y-auto flex-1 min-h-0" x-ref="messageList">
+    <!-- Messages -->
+    <div class="space-y-2 mb-3 overflow-y-auto flex-1 min-h-0" x-ref="messageList">
       <template x-for="msg in messages" :key="msg.id">
-        <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
+        <div class="flex flex-col" :class="msg.role === 'user' ? 'items-end' : 'items-start'">
           <div class="max-w-[82%] rounded-xl px-4 py-3 text-[0.95rem] leading-relaxed text-slate-800 border"
-               :class="msg.role === 'user'
-                 ? 'bg-indigo-50 border-indigo-200'
-                 : 'bg-white border-slate-200 shadow-sm'">
+               :class="msg.role === 'user' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 shadow-sm'">
+            <template x-if="msg.toolCalls && msg.toolCalls.length > 0">
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                <template x-for="tc in msg.toolCalls" :key="tc.name">
+                  <span class="relative inline-flex items-center gap-1 text-[0.7rem] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full px-2.5 py-0.5 cursor-default group/tc">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                    <span x-text="tc.label"></span>
+                    <!-- Tooltip -->
+                    <span class="pointer-events-none absolute bottom-full left-0 mb-1.5 w-56 rounded-lg bg-slate-800 px-3 py-2 text-[0.72rem] font-normal text-white leading-snug shadow-lg
+                                 opacity-0 group-hover/tc:opacity-100 transition-opacity duration-150 z-50"
+                          x-text="tc.desc"></span>
+                  </span>
+                </template>
+              </div>
+            </template>
             <span class="md" x-html="render(msg.content)"></span>
           </div>
+          <span x-show="msg.time" x-text="msg.time" class="text-[0.65rem] text-slate-400 mt-1 px-1"></span>
         </div>
       </template>
 
@@ -193,21 +243,29 @@
       </div>
     </div>
 
+    <!-- Follow-up chips -->
+    <div x-show="followupChips.length > 0 && !loading" class="flex flex-wrap gap-2 mb-2">
+      <template x-for="chip in followupChips" :key="chip.text_en">
+        <button @click="sendMessage(language === 'es' ? chip.text_es : chip.text_en)"
+                class="bg-white border border-slate-200 rounded-lg px-3 py-1 text-[0.8rem] text-slate-600
+                       hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700
+                       transition-all duration-150 shadow-sm cursor-pointer">
+          <span x-text="language === 'es' ? chip.text_es : chip.text_en"></span>
+        </button>
+      </template>
+    </div>
+
     <!-- Input -->
     <form @submit.prevent="sendMessage()" class="flex gap-2">
-      <input
-        x-model="input"
-        type="text"
-        :placeholder="t('inputPlaceholder')"
-        :disabled="loading"
-        class="flex-1 bg-[#F8F9FB] border border-slate-200 rounded-xl px-4 py-2.5
-               text-[0.92rem] text-slate-800 placeholder-slate-400
-               outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
-               disabled:opacity-50 transition-all"
-      />
+      <input x-model="input" type="text"
+             :placeholder="t('inputPlaceholder')"
+             :disabled="loading"
+             class="flex-1 bg-[#F8F9FB] border border-slate-200 rounded-xl px-4 py-2.5
+                    text-[0.92rem] text-slate-800 placeholder-slate-400
+                    outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+                    disabled:opacity-50 transition-all" />
       <button type="submit" :disabled="loading || !input.trim()"
-              class="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white
-                     rounded-xl px-4 py-2.5 transition-colors cursor-pointer">
+              class="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white rounded-xl px-4 py-2.5 transition-colors cursor-pointer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <line x1="22" y1="2" x2="11" y2="13"/>
           <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -226,11 +284,15 @@ const I18N = {
     regenerating:    'Regenerating…',
     aiAnalyst:       'AI Analyst',
     chipHint:        'Not sure where to start? Try one of these —',
+    refreshChips:    'Regenerate',
     inputPlaceholder:'Ask anything about your hotels…',
     chips: [
-      'Which hotel had the best occupancy?',
-      'What drove the revenue change?',
-      'Summarise all key metrics',
+      'Which hotel had the highest RevPAR in 2025?',
+      'Which hotels missed their occupancy budget?',
+      'Compare ADR vs budget across all hotels',
+      'Which month had the worst GOP margin in 2025?',
+      'Rank hotels by GOP for 2025',
+      'Where is occupancy trending below budget?',
     ],
   },
   es: {
@@ -239,11 +301,15 @@ const I18N = {
     regenerating:    'Regenerando…',
     aiAnalyst:       'Analista IA',
     chipHint:        '¿No sabes por dónde empezar? Prueba una de estas —',
+    refreshChips:    'Regenerar',
     inputPlaceholder:'Pregunta lo que quieras sobre tus hoteles…',
     chips: [
-      '¿Qué hotel tuvo mejor ocupación?',
-      '¿Qué impulsó el cambio en ingresos?',
-      'Resume todas las métricas clave',
+      '¿Qué hotel tuvo el mayor RevPAR en 2025?',
+      '¿Qué hoteles no alcanzaron su presupuesto de ocupación?',
+      'Compara el ADR vs presupuesto en todos los hoteles',
+      '¿Qué mes tuvo el peor margen GOP en 2025?',
+      'Rankea los hoteles por GOP en 2025',
+      '¿Dónde está la ocupación por debajo del presupuesto?',
     ],
   },
 };
@@ -251,17 +317,25 @@ const I18N = {
 function dashboard() {
   return {
     insights: [],
-    activeTip: null,
+    dynamicChips: [],
+    followupChips: [],
+    activeInsight: null,
     messages: [],
     input: '',
     loading: false,
     refreshing: false,
+    refreshingChips: false,
     language: localStorage.getItem('lang') || 'en',
     cardColors: ['#6366F1', '#10B981', '#F59E0B'],
 
     t(key) { return I18N[this.language]?.[key] ?? I18N.en[key]; },
 
-    get chips() { return I18N[this.language]?.chips ?? I18N.en.chips; },
+    get chips() {
+      if (this.dynamicChips.length > 0) {
+        return this.dynamicChips.map(c => this.language === 'es' ? c.text_es : c.text_en);
+      }
+      return I18N[this.language]?.chips ?? I18N.en.chips;
+    },
 
     setLanguage(lang) {
       if (lang === this.language) return;
@@ -271,16 +345,40 @@ function dashboard() {
 
     async init() {
       try {
-        const res = await fetch('/api/insights');
-        const data = await res.json();
-        this.insights = data.insights || [];
+        const [insightsRes, suggestionsRes] = await Promise.all([
+          fetch('/api/insights'),
+          fetch('/api/suggestions'),
+        ]);
+        const insightsData = await insightsRes.json();
+        this.insights = insightsData.insights || [];
+        const suggestionsData = await suggestionsRes.json();
+        this.dynamicChips = suggestionsData.suggestions || [];
       } catch (e) {
-        console.error('Failed to load insights:', e);
+        console.error('Failed to load data:', e);
       }
     },
 
-    render(text) {
-      return marked.parse(text);
+    render(text) { return marked.parse(text || ''); },
+
+    toolLabel(name) {
+      const map = {
+        overall_kpis_annual: {
+          label: 'Annual KPIs',
+          desc: 'Fetched aggregated occupancy, ADR, RevPAR, and GOP across all hotels by year — real vs. budget.',
+        },
+        kpis_by_hotel_annual: {
+          label: 'Hotel KPIs',
+          desc: 'Fetched per-hotel annual performance: occupancy, ADR, RevPAR, and GOP margin broken down by property.',
+        },
+        kpis_monthly: {
+          label: 'Monthly KPIs',
+          desc: 'Fetched month-by-month KPIs for the selected year, including occupancy, ADR, RevPAR, and GOP margin vs. budget.',
+        },
+      };
+      const entry = map[name];
+      return entry
+        ? { label: entry.label, desc: entry.desc }
+        : { label: name.replace(/_/g, ' '), desc: `Called tool: ${name}` };
     },
 
     scrollToBottom() {
@@ -298,10 +396,30 @@ function dashboard() {
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         const data = await res.json();
         this.insights = data.insights || [];
+        try {
+          const sRes = await fetch('/api/suggestions');
+          const sData = await sRes.json();
+          this.dynamicChips = sData.suggestions || [];
+        } catch (_) {}
       } catch (e) {
         console.error('Failed to refresh insights:', e);
       } finally {
         this.refreshing = false;
+      }
+    },
+
+    async refreshChips() {
+      if (this.refreshingChips) return;
+      this.refreshingChips = true;
+      try {
+        const res = await fetch('/api/suggestions/refresh', { method: 'POST' });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+        this.dynamicChips = data.suggestions || [];
+      } catch (e) {
+        console.error('Failed to refresh suggestions:', e);
+      } finally {
+        this.refreshingChips = false;
       }
     },
 
@@ -310,12 +428,15 @@ function dashboard() {
       if (!message || this.loading) return;
 
       this.input = '';
+      this.followupChips = [];
       const history = this.messages.map(m => ({ role: m.role, content: m.content }));
-      this.messages.push({ id: Date.now(), role: 'user', content: message });
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      this.messages.push({ id: Date.now(), role: 'user', content: message, time });
       this.loading = true;
       this.scrollToBottom();
 
-      const assistant = { id: Date.now() + 1, role: 'assistant', content: '' };
+      const assistant = { id: Date.now() + 1, role: 'assistant', content: '', toolCalls: [], time };
 
       try {
         const res = await fetch('/api/chat', {
@@ -326,10 +447,7 @@ function dashboard() {
 
         if (!res.ok) throw new Error(`Server error ${res.status}`);
 
-        this.messages.push(assistant);
-        this.loading = false;
-        this.scrollToBottom();
-
+        let pushed = false;
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -340,34 +458,60 @@ function dashboard() {
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          buffer = lines.pop(); // keep any incomplete trailing line
+          buffer = lines.pop();
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
             const raw = line.slice(6).trim();
             if (!raw) continue;
 
-            let token = '';
             try {
               const blocks = JSON.parse(raw);
-              if (Array.isArray(blocks)) {
-                token = blocks
-                  .filter(b => b.type === 'text')
-                  .map(b => b.text)
-                  .join('');
-              } else {
-                token = raw;
+              if (!Array.isArray(blocks)) continue;
+
+              for (const block of blocks) {
+                if (block.type === 'tool_use') {
+                  const { label, desc } = this.toolLabel(block.name);
+                  if (!assistant.toolCalls.find(tc => tc.name === block.name)) {
+                    assistant.toolCalls.push({ name: block.name, label, desc });
+                  }
+                  if (pushed) {
+                    const idx = this.messages.findIndex(m => m.id === assistant.id);
+                    if (idx !== -1) this.messages[idx].toolCalls = [...assistant.toolCalls];
+                  }
+                } else if (block.type === 'text' && block.text) {
+                  if (!pushed) {
+                    this.messages.push(assistant);
+                    this.loading = false;
+                    pushed = true;
+                  }
+                  const idx = this.messages.findIndex(m => m.id === assistant.id);
+                  if (idx !== -1) this.messages[idx].content += block.text;
+                }
               }
             } catch {
-              token = raw; // plain text fallback
+              // ignore parse errors
             }
 
-            if (token) {
-              const idx = this.messages.findIndex(m => m.id === assistant.id);
-              if (idx !== -1) this.messages[idx].content += token;
-              this.scrollToBottom();
-            }
+            this.scrollToBottom();
           }
+        }
+
+        if (!pushed) {
+          this.messages.push(assistant);
+          this.loading = false;
+        }
+
+        // Fetch follow-up suggestions from the completed response
+        if (assistant.content) {
+          fetch('/api/suggestions/followup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ history, last_response: assistant.content }),
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data) this.followupChips = data.suggestions || []; })
+            .catch(() => {});
         }
       } catch (err) {
         this.loading = false;
