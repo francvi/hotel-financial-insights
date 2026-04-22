@@ -23,11 +23,27 @@ class SuggestionItem(BaseModel):
 
 class LLMSuggestionsResponse(BaseModel):
     suggestions: List[SuggestionItem] = Field(
-        ..., description="List of 6 suggested questions for the user"
+        ..., description="List of suggested questions for the user"
     )
 
 
 structured_llm = llm.with_structured_output(LLMSuggestionsResponse)
+
+
+def gen_followup(conversation: str) -> LLMSuggestionsResponse:
+    return structured_llm.invoke(
+        f"""You are a hotel financial analyst assistant. Given the conversation below, generate exactly 3 short follow-up questions the user might naturally ask next.
+
+Rules:
+- Questions must be directly relevant to what was just discussed
+- Each question should be concise (max 10 words in English)
+- Do not repeat questions already asked in the conversation
+- Provide each question in both English and Spanish
+
+[CONVERSATION]
+{conversation}
+"""
+    )
 
 
 def gen_suggestions(kpi_results: str) -> LLMSuggestionsResponse:

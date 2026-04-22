@@ -23,6 +23,7 @@ from agent.agent import build_agent  # noqa: E402
 from agent.system_prompt import SYSTEM_PROMPT  # noqa: E402
 from insights.db import clear_rows  # noqa: E402
 from suggestions.db import clear as clear_suggestions  # noqa: E402
+from suggestions.generator import gen_followup  # noqa: E402
 from load_insights import load_insights  # noqa: E402
 from load_suggestions import load_suggestions  # noqa: E402
 from kpis import kpi_service
@@ -67,25 +68,6 @@ async def get_insights() -> JSONResponse:
 @app.get("/api/suggestions")
 async def get_suggestions() -> JSONResponse:
     return JSONResponse(_suggestions)
-
-
-@app.post("/api/suggestions/refresh")
-async def refresh_suggestions() -> JSONResponse:
-    global _suggestions
-    clear_suggestions()
-    _suggestions = load_suggestions()
-    return JSONResponse(_suggestions)
-
-
-@app.post("/api/insights/refresh")
-async def refresh_insights() -> JSONResponse:
-    global _insights, _suggestions, _agent
-    clear_rows()
-    clear_suggestions()
-    _insights = load_insights()
-    _suggestions = load_suggestions()
-    _agent = _build_agent_with_context(_insights)
-    return JSONResponse(_insights)
 
 
 class HistoryItem(BaseModel):
@@ -143,6 +125,42 @@ async def chat(body: ChatRequest) -> EventSourceResponse:
                 yield {"data": json.dumps([{"type": "text", "text": token.content}])}
 
     return EventSourceResponse(token_stream())
+
+
+class FollowupRequest(BaseModel):
+    history: list[HistoryItem] = Field(default=[], max_length=20)
+    last_response: str = Field(max_length=50_000)
+
+
+@app.post("/api/suggestions/followup")
+async def followup_suggestions(body: FollowupRequest) -> JSONResponse:
+    lines = []
+    for turn in body.history:
+        role = "User" if turn.role == "user" else "Assistant"
+        lines.append(f"{role}: {turn.content}")
+    lines.append(f"Assistant: {body.last_response}")
+    conversation = "\n".join(lines)
+    result = gen_followup(conversation=conversation)
+    return JSONResponse(result.model_dump())
+
+
+@app.post("/api/suggestions/refresh")
+async def refresh_suggestions() -> JSONResponse:
+    global _suggestions
+    clear_suggestions()
+    _suggestions = load_suggestions()
+    return JSONResponse(_suggestions)
+
+
+@app.post("/api/insights/refresh")
+async def refresh_insights() -> JSONResponse:
+    global _insights, _suggestions, _agent
+    clear_rows()
+    clear_suggestions()
+    _insights = load_insights()
+    _suggestions = load_suggestions()
+    _agent = _build_agent_with_context(_insights)
+    return JSONResponse(_insights)
 
 
 # ── Static files — must be mounted last so API routes take precedence ──────

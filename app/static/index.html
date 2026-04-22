@@ -239,6 +239,18 @@
       </div>
     </div>
 
+    <!-- Follow-up chips -->
+    <div x-show="followupChips.length > 0 && !loading" class="flex flex-wrap gap-2 mb-2">
+      <template x-for="chip in followupChips" :key="chip.text_en">
+        <button @click="sendMessage(language === 'es' ? chip.text_es : chip.text_en)"
+                class="bg-white border border-slate-200 rounded-lg px-3 py-1 text-[0.8rem] text-slate-600
+                       hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700
+                       transition-all duration-150 shadow-sm cursor-pointer">
+          <span x-text="language === 'es' ? chip.text_es : chip.text_en"></span>
+        </button>
+      </template>
+    </div>
+
     <!-- Input -->
     <form @submit.prevent="sendMessage()" class="flex gap-2">
       <input x-model="input" type="text"
@@ -302,6 +314,7 @@ function dashboard() {
   return {
     insights: [],
     dynamicChips: [],
+    followupChips: [],
     activeInsight: null,
     messages: [],
     input: '',
@@ -399,6 +412,7 @@ function dashboard() {
       if (!message || this.loading) return;
 
       this.input = '';
+      this.followupChips = [];
       const history = this.messages.map(m => ({ role: m.role, content: m.content }));
       const now = new Date();
       const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -470,6 +484,18 @@ function dashboard() {
         if (!pushed) {
           this.messages.push(assistant);
           this.loading = false;
+        }
+
+        // Fetch follow-up suggestions from the completed response
+        if (assistant.content) {
+          fetch('/api/suggestions/followup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ history, last_response: assistant.content }),
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data) this.followupChips = data.suggestions || []; })
+            .catch(() => {});
         }
       } catch (err) {
         this.loading = false;
