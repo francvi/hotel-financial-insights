@@ -23,6 +23,7 @@ from agent.agent import build_agent  # noqa: E402
 from agent.system_prompt import SYSTEM_PROMPT  # noqa: E402
 from insights.db import clear_rows  # noqa: E402
 from load_insights import load_insights  # noqa: E402
+from kpis import kpi_service
 
 _insights: dict = {}
 _agent = None
@@ -43,11 +44,14 @@ app = FastAPI(lifespan=lifespan)
 
 
 def _build_agent_with_context(insights: dict):
+
     context_lines = "\n".join(
         f"- {item['text_en']}: {item['value']}" for item in insights.get("insights", [])
     )
+    system_prompt = f"{SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
+
     return build_agent(
-        system_prompt=f"{SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
+        system_prompt=system_prompt,
     )
 
 

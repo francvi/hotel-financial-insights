@@ -34,8 +34,16 @@ class KpiService:
         self.df = df
 
     def _agg_real_budget(self, group_cols: list, metric_cols: list) -> pd.DataFrame:
-        real = self.df[self.df["ESCENARIO"] == "REAL"].groupby(group_cols)[metric_cols].mean()
-        budget = self.df[self.df["ESCENARIO"] == "BUDGET"].groupby(group_cols)[metric_cols].mean()
+        real = (
+            self.df[self.df["ESCENARIO"] == "REAL"]
+            .groupby(group_cols)[metric_cols]
+            .mean()
+        )
+        budget = (
+            self.df[self.df["ESCENARIO"] == "BUDGET"]
+            .groupby(group_cols)[metric_cols]
+            .mean()
+        )
 
         merged = real.join(budget, lsuffix="_REAL", rsuffix="_BUDGET").reset_index()
         for col in metric_cols:
@@ -43,16 +51,32 @@ class KpiService:
         return merged
 
     def overall_kpis_annual(self) -> pd.DataFrame:
-        return self._agg_real_budget(["ANIO"], ["OCC", "ADR", "REVPAR", "GOP", "GOP_MARGIN"])
+        """Returns all KPIs across all hotels aggregated by year"""
+        return self._agg_real_budget(
+            ["ANIO"], ["OCC", "ADR", "REVPAR", "GOP", "GOP_MARGIN"]
+        )
 
     def kpis_by_hotel_annual(self) -> pd.DataFrame:
-        return self._agg_real_budget(["HOTEL", "ANIO"], ["OCC", "ADR", "REVPAR", "GOP", "GOP_MARGIN"])
+        """Returns all KPIs by hotel aggregated by year"""
+        return self._agg_real_budget(
+            ["HOTEL", "ANIO"], ["OCC", "ADR", "REVPAR", "GOP", "GOP_MARGIN"]
+        )
 
     def kpis_monthly(self, year: int = 2025) -> pd.DataFrame:
+        """Returns all KPIs aggregated by month for the given year"""
+
         df = self.df[self.df["ANIO"] == year]
 
-        real = df[df["ESCENARIO"] == "REAL"].groupby("MES")[["OCC", "ADR", "REVPAR", "GOP_MARGIN"]].mean()
-        budget = df[df["ESCENARIO"] == "BUDGET"].groupby("MES")[["OCC", "ADR", "REVPAR", "GOP_MARGIN"]].mean()
+        real = (
+            df[df["ESCENARIO"] == "REAL"]
+            .groupby("MES")[["OCC", "ADR", "REVPAR", "GOP_MARGIN"]]
+            .mean()
+        )
+        budget = (
+            df[df["ESCENARIO"] == "BUDGET"]
+            .groupby("MES")[["OCC", "ADR", "REVPAR", "GOP_MARGIN"]]
+            .mean()
+        )
 
         merged = real.join(budget, lsuffix="_REAL", rsuffix="_BUDGET").reset_index()
         for col in ["OCC", "ADR", "REVPAR", "GOP_MARGIN"]:
@@ -78,38 +102,65 @@ class KpiService:
         md = "## Overall Annual KPIs (REAL vs BUDGET)\n"
         rows = []
         for _, r in annual.iterrows():
-            rows.append({
-                "Year": int(r["ANIO"]),
-                "Occ_Real": pct(r.get("OCC_REAL")), "Occ_Bdg": pct(r.get("OCC_BUDGET")), "Occ_Var": pct(r.get("OCC_VAR")),
-                "ADR_Real": usd(r.get("ADR_REAL")), "ADR_Bdg": usd(r.get("ADR_BUDGET")),
-                "RevPAR_Real": usd(r.get("REVPAR_REAL")), "RevPAR_Bdg": usd(r.get("REVPAR_BUDGET")),
-                "GOP_Margin_Real": pct(r.get("GOP_MARGIN_REAL")), "GOP_Margin_Bdg": pct(r.get("GOP_MARGIN_BUDGET")),
-            })
+            rows.append(
+                {
+                    "Year": int(r["ANIO"]),
+                    "Occ_Real": pct(r.get("OCC_REAL")),
+                    "Occ_Bdg": pct(r.get("OCC_BUDGET")),
+                    "Occ_Var": pct(r.get("OCC_VAR")),
+                    "ADR_Real": usd(r.get("ADR_REAL")),
+                    "ADR_Bdg": usd(r.get("ADR_BUDGET")),
+                    "RevPAR_Real": usd(r.get("REVPAR_REAL")),
+                    "RevPAR_Bdg": usd(r.get("REVPAR_BUDGET")),
+                    "GOP_Margin_Real": pct(r.get("GOP_MARGIN_REAL")),
+                    "GOP_Margin_Bdg": pct(r.get("GOP_MARGIN_BUDGET")),
+                }
+            )
         md += pd.DataFrame(rows).to_markdown(index=False) + "\n\n"
 
         # Monthly 2025
         md += "## Monthly KPIs 2025 (REAL vs BUDGET)\n"
         mrows = []
         for _, r in monthly.iterrows():
-            mrows.append({
-                "Month": int(r["MES"]),
-                "Occ_Real": pct(r.get("OCC_REAL")), "Occ_Bdg": pct(r.get("OCC_BUDGET")), "Occ_Var": pct(r.get("OCC_VAR")),
-                "ADR_Real": usd(r.get("ADR_REAL")), "ADR_Var": usd(r.get("ADR_VAR")),
-                "RevPAR_Real": usd(r.get("REVPAR_REAL")), "RevPAR_Var": usd(r.get("REVPAR_VAR")),
-                "GOP_Margin_Real": pct(r.get("GOP_MARGIN_REAL")), "GOP_Margin_Var": pct(r.get("GOP_MARGIN_VAR")),
-            })
+            mrows.append(
+                {
+                    "Month": int(r["MES"]),
+                    "Occ_Real": pct(r.get("OCC_REAL")),
+                    "Occ_Bdg": pct(r.get("OCC_BUDGET")),
+                    "Occ_Var": pct(r.get("OCC_VAR")),
+                    "ADR_Real": usd(r.get("ADR_REAL")),
+                    "ADR_Var": usd(r.get("ADR_VAR")),
+                    "RevPAR_Real": usd(r.get("REVPAR_REAL")),
+                    "RevPAR_Var": usd(r.get("REVPAR_VAR")),
+                    "GOP_Margin_Real": pct(r.get("GOP_MARGIN_REAL")),
+                    "GOP_Margin_Var": pct(r.get("GOP_MARGIN_VAR")),
+                }
+            )
         md += pd.DataFrame(mrows).to_markdown(index=False) + "\n\n"
 
         # By hotel 2025 REAL
-        real_2025 = self.df[(self.df["ESCENARIO"] == "REAL") & (self.df["ANIO"] == 2025)]
-        hotel_summary = real_2025.groupby("HOTEL")[["OCC", "ADR", "REVPAR", "GOP_MARGIN", "GOP"]].mean().reset_index()
+        real_2025 = self.df[
+            (self.df["ESCENARIO"] == "REAL") & (self.df["ANIO"] == 2025)
+        ]
+        hotel_summary = (
+            real_2025.groupby("HOTEL")[["OCC", "ADR", "REVPAR", "GOP_MARGIN", "GOP"]]
+            .mean()
+            .reset_index()
+        )
         hotel_summary = hotel_summary.sort_values("REVPAR", ascending=False)
         hotel_summary["OCC"] = hotel_summary["OCC"].apply(pct)
         hotel_summary["ADR"] = hotel_summary["ADR"].apply(usd)
         hotel_summary["REVPAR"] = hotel_summary["REVPAR"].apply(usd)
         hotel_summary["GOP_MARGIN"] = hotel_summary["GOP_MARGIN"].apply(pct)
         hotel_summary["GOP"] = hotel_summary["GOP"].apply(lambda v: f"{v:,.0f}")
-        hotel_summary.columns = ["Hotel", "Occ", "ADR", "RevPAR", "GOP_Margin", "GOP_Avg"]
+        hotel_summary.columns = [
+            "Hotel",
+            "Occ",
+            "ADR",
+            "RevPAR",
+            "GOP_Margin",
+            "GOP_Avg",
+        ]
 
         md += "## Hotel Ranking 2025 REAL (by RevPAR)\n"
         md += hotel_summary.to_markdown(index=False) + "\n"
