@@ -4,15 +4,19 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 
+from integration.langfuse import langfuse_handler, langfuse_client
+
 
 llm = None
 
 if settings.INSIGHTS_LLM_PROVIDER == "ollama":
     from app.integration.ollama import init_chat_llm
+
     llm = init_chat_llm(model="llama3.2:latest", temperature=0.7)
 
 if settings.INSIGHTS_LLM_PROVIDER == "openai":
     from app.integration.openai import init_chat_llm
+
     llm = init_chat_llm(model="gpt-4.1", temperature=0.7)
 
 
@@ -42,7 +46,11 @@ Rules:
 
 [CONVERSATION]
 {conversation}
-"""
+""",
+        config={
+            "callbacks": [langfuse_handler] if langfuse_handler else [],
+            "metadata": {"source": "suggestions_engine"},
+        },
     )
 
 

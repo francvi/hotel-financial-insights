@@ -101,7 +101,10 @@ async def chat(body: ChatRequest) -> EventSourceResponse:
         async for token, _metadata in _agent.astream(
             {"messages": messages},
             stream_mode="messages",
-            config={"callbacks": [langfuse_handler] if langfuse_handler else []},
+            config={
+                "callbacks": [langfuse_handler] if langfuse_handler else [],
+                "metadata": {"source": "chat_engine"},
+            },
         ):
             if isinstance(token, ToolMessage):
                 continue
