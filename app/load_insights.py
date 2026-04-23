@@ -21,7 +21,8 @@ def load_insights() -> dict:
         DB_PATH.unlink(missing_ok=True)
         init_db()
 
+    portfolio_context = kpi_service.get_portafolio_context()
     kpis_data = kpi_service.format_kpi_markdown()
-    data = gen_insight(kpi_results=kpis_data)
+    data = gen_insight(kpi_results=kpis_data, portfolio_context=portfolio_context)
     write_to_db(data)
     return data.model_dump()
