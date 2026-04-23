@@ -39,45 +39,66 @@ These are the KPIs calculable from the group's data. Use these definitions preci
 
 ### Room KPIs
 
-| KPI | Formula | Unit | Meaning |
-|-----|---------|------|---------|
-| **Occupancy** | RN / HABITACIONES | % | Share of available room-nights actually sold. HABITACIONES = total available room-nights in the period. |
-| **ADR** (Average Daily Rate) | ROOMS_REVENUE / RN | € | Average revenue earned per room sold. Measures pricing power. |
-| **RevPAR** (Revenue per Available Room) | ROOMS_REVENUE / HABITACIONES | € | Revenue per available room-night regardless of occupancy. Primary top-line room KPI. Also equals ADR × Occupancy. |
-| **RN** (Room Nights sold) | — | nights | Total rooms sold in the period. Volume metric. |
-
-### Revenue KPIs
+## 1. CONTROL DE COSTES Y EFICIENCIA OPERATIVA (OPEX & LABOR)
 
 | KPI | Formula | Unit | Meaning |
 |-----|---------|------|---------|
-| **ROOMS_REVENUE** | ROOMS_REV_ALOJAMIENTO + ROOMS_REV_UPGRADES + ROOMS_REV_OTROS | € | Total rooms department revenue. |
-| **FB_REVENUE** | FOOD_REVENUE + BEVERAGE_REVENUE + BANQUETS_REVENUE + FB_PENSION + DAY_PASS | € | Total Food & Beverage revenue. |
-| **OPERATING_REVENUE** | ROOMS_REVENUE + FB_REVENUE + OTHER_DEPT_REVENUE + MISC_INCOME | € | Total hotel revenue across all departments. |
-| **AR** (Average Rate) | OPERATING_REVENUE / RN | € | Total revenue per room sold (all departments). Broader than ADR. |
+| **CPOR** | ROOMS_OPEX / RN | € | Cost Per Occupied Room. Operating cost per room sold. |
+| **CPH** | ROOMS_OPEX / HABITACIONES | € | Cost Per House. Operating cost per available room. |
+| **LBC** | ROOMS_PERSONNEL / ROOMS_REVENUE | % | Labor Cost (Rooms). Personnel cost vs rooms revenue. |
+| **LPC_TOTAL** | (ROOMS_PERSONNEL + FB_PERSONNEL) / OPERATING_REVENUE | % | Total Labor Cost efficiency across all departments. |
+| **UNDISTRIB_OPEX_Pct** | UNDISTRIB_OPEX / OPERATING_REVENUE | % | Share of undistributed operating expenses over total revenue. |
+| **F&B_CPOR** | FB_OPEX / RN | € | F&B operating cost per room sold. |
+| **F&B_CPH** | FB_OPEX / HABITACIONES | € | F&B operating cost per available room. |
+| **F&B_LBC** | FB_PERSONNEL / FB_REVENUE | % | F&B labor cost vs F&B revenue. |
 
-### Cost & Profitability KPIs
+## 2. ANÁLISIS DETALLADO (ALIMENTOS Y BEBIDAS)
 
 | KPI | Formula | Unit | Meaning |
 |-----|---------|------|---------|
-| **ROOMS_OPEX** | ROOMS_PERSONNEL + ROOMS_OTHER_EXPENSES | € | Total rooms department operating costs. |
-| **FB_OPEX** | FB_COST + FB_PERSONNEL + FB_OTHER_EXPENSES | € | Total F&B department operating costs. Includes food/beverage cost of sales. |
-| **ROOMS_PROFIT** | ROOMS_REVENUE − ROOMS_OPEX | € | Rooms department profit (departmental margin). |
-| **FB_PROFIT** | FB_REVENUE − FB_OPEX | € | F&B department profit. |
-| **TOTAL_DEPT_PROFIT** | ROOMS_PROFIT + FB_PROFIT | € | Combined departmental profit before undistributed expenses. |
-| **GOP** (Gross Operating Profit) | TOTAL_DEPT_PROFIT − UNDISTRIB_OPEX | € | Profit after all operating expenses. The primary hotel-level profitability KPI. |
-| **GOP Margin** | GOP / OPERATING_REVENUE | % | Share of total revenue that becomes GOP. Key efficiency indicator. |
-| **Food Cost %** | FOOD_COST / FOOD_REVENUE | % | Cost of food sold as a share of food revenue. Target typically 28–35%. |
-| **Beverage Cost %** | BEVERAGE_COST / BEVERAGE_REVENUE | % | Cost of beverages sold as a share of beverage revenue. Target typically 20–28%. |
+| **Food_Cost_Pct** | FOOD_COST / FOOD_REVENUE | % | Cost of food sold as a share of food revenue. |
+| **Beverage_Cost_Pct** | BEVERAGE_COST / BEVERAGE_REVENUE | % | Cost of beverages sold as a share of beverage revenue. |
+| **F&B_GOP_MARGIN** | FB_PROFIT / FB_REVENUE | % | F&B departmental profit margin. |
+| **F&B_REVPAR** | FB_REVENUE / HABITACIONES | € | F&B revenue per available room-night. |
+| **F&B_GOPPAR** | FB_PROFIT / HABITACIONES | € | F&B profit per available room-night. |
+| **BANQUETS_CONTRIBUTION** | BANQUETS_REVENUE / FB_REVENUE | % | Share of banquets revenue within total F&B. |
+| **FB_PENSION_PCT** | FB_PENSION / FB_REVENUE | % | Share of meal plan revenue within total F&B. |
 
-### Variance KPIs (Budget vs. Actual)
+## 3. REVENUE MANAGEMENT AVANZADO (VENTA Y CAPTACIÓN)
 
-| KPI | Formula | Meaning |
-|-----|---------|---------|
-| **Occ Var** | Occ_REAL − Occ_BUDGET | Percentage-point gap between actual and budgeted occupancy. |
-| **ADR Var** | ADR_REAL − ADR_BUDGET | Actual vs. budgeted rate gap in €. Negative = rate erosion. |
-| **RevPAR Var** | RevPAR_REAL − RevPAR_BUDGET | Combined volume+rate miss or beat vs. plan. |
-| **GOP Var** | GOP_REAL − GOP_BUDGET | Absolute profit above or below budget. |
-| **GOP Margin Var** | GOP_Margin_REAL − GOP_Margin_BUDGET | Efficiency gap vs. plan in percentage points. |
+| KPI | Formula | Unit | Meaning |
+|-----|---------|------|---------|
+| **OCC** | RN / HABITACIONES | % | Occupancy. Share of available rooms sold. |
+| **ADR** | ROOMS_REVENUE / RN | € | Average Daily Rate. Average price per room sold. |
+| **REVPAR** | ROOMS_REVENUE / HABITACIONES | € | Revenue Per Available Room. |
+| **TRevPAR** | OPERATING_REVENUE / HABITACIONES | € | Total Revenue per available room. |
+| **RevPOR / AR** | OPERATING_REVENUE / RN | € | Total Revenue per occupied room. |
+| **UPGRADE_PEN** | ROOMS_REV_UPGRADES / ROOMS_REV_ALOJAMIENTO | % | Upsell efficiency: upgrade revenue vs base lodging. |
+| **NON_ROOMS_REVENUE_PCT** | (OPERATING_REVENUE - ROOMS_REVENUE) / OPERATING_REVENUE | % | Share of revenue from non-room departments. |
+| **ANCILLARY_REV_POR** | (DAY_PASS + OTHER_DEPT_REVENUE) / RN | € | Ancillary revenue generated per room sold. |
+| **OTHER_REV_POR** | OTHER_DEPT_REVENUE / RN | € | Minor departments revenue per room sold. |
+
+## 4. RENTABILIDAD FINAL (RESULTADOS)
+
+| KPI | Formula | Unit | Meaning |
+|-----|---------|------|---------|
+| **GOP** | — | € | Gross Operating Profit. Total hotel-level profit. |
+| **GOPPAR** | GOP / HABITACIONES | € | GOP per available room-night. |
+| **GOP_MARGIN** | GOP / OPERATING_REVENUE | % | Share of total revenue that becomes profit. |
+| **PROFIT_POR** | GOP / RN | € | Net operating profit per room sold. |
+
+---
+
+## VARIANCE METRICS (GENERAL RULE)
+
+> **Metric Suffix: '_var'**
+ 
+> By general rule, any metric can be expressed as an **absolute variance** (Actual vs. Budget/Last Year).
+> 
+> **Standard Formula:**
+> `KPI_var = KPI_REAL - KPI_BUDGET`
+> 
+> This applies to all variables (e.g., `OCC_var`, `ADR_var`, `GOP_var`, `CPOR_var`, etc.), representing the numerical gap between the real performance and the target.
 
 ### Scenarios in the data
 
