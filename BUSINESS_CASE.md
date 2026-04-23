@@ -10,22 +10,77 @@ El objetivo es implementar una infraestructura analítica donde la interpretaci�
 ### 2. Taxonomía de Métricas de Desempeño
 A continuación, se detallan los indicadores clave que el sistema procesará automáticamente. Estas métricas siguen los estándares globales de la industria para asegurar la comparabilidad (**Benchmarking**).
 
-| Métrica | Definición | Fórmula  | Aplicación / ISO |
-| :--- | :---| :----- | :--- |
-| **ADR** | Precio promedio pagado por habitación ocupada. | $ADR = \frac{\text{Ingresos de Habitaciones}}{\text{Habitaciones Vendidas}}$ | Posicionamiento de marca y elasticidad. |
-| **RevPAR** | Ingreso por habitación disponible. | $RevPAR = ADR \times \text{Ocupación}$ | Eficiencia de ventas e inventario. |
-| **RevPAM** | Ingreso por metro cuadrado. | $RevPAM = \frac{\text{Ingresos Totales}}{\text{m}^2 \text{ Totales del Establecimiento}}$ | Eficiencia del activo inmobiliario. |
-| **NRevPAR** | Ingreso neto por hab. disponible. | $NRevPAR = \frac{\text{Ingr. Hab} - \text{Costos Adquisición}}{\text{Total Hab. Disponibles}}$ | Rentabilidad real de canales (Neto). |
-| **GOPPAR** | Beneficio operativo bruto por hab. disponible. | $GOPPAR = \frac{\text{Gross Operating Profit}}{\text{Total Habitaciones Disponibles}}$ | Rentabilidad real del negocio (Bottom-line). |
-| **TRevPAR** | Ingreso total por habitación disponible. | $TRevPAR = \frac{\text{Ingresos Totales}}{\text{Total Habitaciones Disponibles}}$ | Capacidad de monetización cruzada. |
-| **TRevPEC** | Ingreso total por huésped. | $TRevPEC = \frac{\text{Ingresos Totales}}{\text{Total Huéspedes}}$ | Gasto promedio por cliente. |
-| **ALOS** | Duración media de la estancia. | $ALOS = \frac{\text{Pernoctaciones}}{\text{Total de Reservas}}$ | Optimización de costos operativos. |
-| **CPOR** | Costo por habitación ocupada. | $CPOR = \frac{\text{Costos Operativos}}{\text{Habitaciones Ocupadas}}$ | Eficiencia de mantenimiento y personal. |
-| **RevPOR** | Ingreso por habitación ocupada. | $RevPOR = \frac{\text{Ingresos Totales}}{\text{Total Hab. Ocupadas}}$ | Rendimiento por reserva efectiva. |
-| **RGI** | Índice de generación de ingresos vs mercado. | $RGI = \frac{\text{RevPAR Propio}}{\text{RevPAR Market CompSet}} \times 100$ | Cuota de mercado y competitividad. |
-| **ARI** | Índice de tarifa media frente a competencia. | $ARI = \frac{\text{ADR Propio}}{\text{ADR Market CompSet}} \times 100$ | Poder de fijación de precios (Pricing Power). |
-| **MPI** | Índice de penetración de mercado (Ocupación). | \( MPI = \frac{\text{Ocupación Propia}}{\text{Ocupación Market CompSet}} \times 100 \) | Eficacia en la captura de la demanda
+| KPI | Definición | Fórmula | Aplicación | Tipo métrica |
+| :--- | :--- | :--- | :----- | :--- |
+| **CPOR** | Coste operativo departamental por habitación ocupada. | $CPOR = \frac{ROOMS\_OPEX}{RN}$ | Eficiencia de costes variables en pisos y recepción. | EFICIENCIA OPERATIVA |
+| **CPH** | Coste operativo por habitación física disponible. | $CPH = \frac{ROOMS\_OPEX}{HABITACIONES}$ | Impacto de los costes fijos de mantenimiento del inventario. | EFICIENCIA OPERATIVA |
+| **LBC** | Ratio de coste laboral sobre la producción de alojamiento. | $LBC = \frac{ROOMS\_PERSONNEL}{ROOMS\_REVENUE}$ | Productividad de la plantilla del departamento de Rooms. | EFICIENCIA OPERATIVA |
+| **LPC_TOTAL** | Coste laboral total (Habitaciones y F&B) sobre ingresos totales. | $LPC\_TOTAL = \frac{ROOMS\_PERSONNEL + FB\_PERSONNEL}{OPERATING\_REVENUE}$ | Peso de la nómina operativa sobre el volumen de negocio. | EFICIENCIA OPERATIVA |
+| **UNDISTRIB_OPEX_Pct** | Ratio de gastos no distribuidos (Admin, Ventas, Mant.) | $UNDISTRIB\_OPEX\_Pct = \frac{UNDISTRIB\_OPEX}{OPERATING\_REVENUE}$ | Eficiencia de los costes de estructura y soporte. | EFICIENCIA OPERATIVA |
+| **F&B_CPOR** | Coste operativo de Alimentos y Bebidas por habitación ocupada. | $F\&B\_CPOR = \frac{FB\_OPEX}{RN}$ | Impacto del gasto de restauración por cliente alojado. | EFICIENCIA OPERATIVA |
+| **F&B_CPH** | Coste operativo de Restauración por inventario total. | $F\&B\_CPH = \frac{FB\_OPEX}{HABITACIONES}$ | Coste estructural del departamento de F&B. | EFICIENCIA OPERATIVA |
+| **F&B_LBC** | Ratio de coste laboral de F&B sobre sus propios ingresos. | $F\&B\_LBC = \frac{FB\_PERSONNEL}{FB\_REVENUE}$ | Control de productividad en cocina y sala. | EFICIENCIA OPERATIVA |
+| **Food_Cost_Pct** | Porcentaje de consumo de alimentos (Food Cost). | $Food\_Cost\_Pct = \frac{FOOD\_COST}{FOOD\_REVENUE}$ | Control de escandallos, mermas y gestión de compras. | ANÁLISIS F&B |
+| **Beverage_Cost_Pct** | Porcentaje de consumo de bebidas (Beverage Cost). | $Beverage\_Cost\_Pct = \frac{BEVERAGE\_COST}{BEVERAGE\_REVENUE}$ | Control de rentabilidad de bodega y barras. | ANÁLISIS F&B |
+| **F&B_GOP_MARGIN** | Margen de beneficio operativo del departamento de F&B. | $F\&B\_GOP\_MARGIN = \frac{FB\_PROFIT}{FB\_REVENUE}$ | Eficiencia operativa neta de la explotación de restauración. | ANÁLISIS F&B |
+| **F&B_REVPAR** | Ingreso de restauración por habitación disponible. | $F\&B\_REVPAR = \frac{FB\_REVENUE}{HABITACIONES}$ | Capacidad de captura de ingresos de F&B por activo físico. | ANÁLISIS F&B |
+| **F&B_GOPPAR** | Beneficio de restauración por habitación disponible. | $F\&B\_GOPPAR = \frac{FB\_PROFIT}{HABITACIONES}$ | Contribución neta de F&B al beneficio por habitación. | ANÁLISIS F&B |
+| **BANQUETS_CONTRIBUTION** | Peso de banquetes y eventos sobre el total de F&B. | $BANQUETS\_CONTRIBUTION = \frac{BANQUETS\_REVENUE}{FB\_REVENUE}$ | Dependencia y éxito del segmento MICE/Eventos. | ANÁLISIS F&B |
+| **FB_PENSION_PCT** | Ratio de ingresos por regímenes (MP/PC) en el mix de F&B. | $FB\_PENSION\_PCT = \frac{FB\_PENSION}{FB\_REVENUE}$ | Análisis de venta de paquetes vs venta directa/carta. | ANÁLISIS F&B |
+| **OCC** | Grado de ocupación del inventario de habitaciones. | $OCC = \frac{RN}{HABITACIONES}$ | Nivel de utilización de la capacidad del hotel. | REVENUE MGMT |
+| **ADR** | Tarifa media diaria por habitación vendida. | $ADR = \frac{ROOMS\_REVENUE}{RN}$ | Valoración del posicionamiento de precio y demanda. | REVENUE MGMT |
+| **REVPAR** | Ingresos de habitaciones por habitación disponible. | $REVPAR = \frac{ROOMS\_REVENUE}{HABITACIONES}$ | Indicador principal de rendimiento hotelero (Rev. Management). | REVENUE MGMT |
+| **TRevPAR** | Ingresos totales por habitación disponible. | $TRevPAR = \frac{OPERATING\_REVENUE}{HABITACIONES}$ | Capacidad de monetización integral del activo físico. | REVENUE MGMT |
+| **RevPOR** | Ingresos totales generados por cada habitación ocupada. | $RevPOR = \frac{OPERATING\_REVENUE}{RN}$ | Gasto medio total del huésped durante su estancia. | REVENUE MGMT |
+| **AR** | Ingreso promedio por noche ocupada (Average Revenue). | $AR = \frac{OPERATING\_REVENUE}{RN}$ | Captura de ingresos totales por cliente alojado. | REVENUE MGMT |
+| **UPGRADE_PEN** | Penetración de ingresos por mejoras de categoría. | $UPGRADE\_PEN = \frac{ROOMS\_REV\_UPGRADES}{ROOMS\_REV\_ALOJAMIENTO}$ | Eficiencia de las estrategias de venta incremental (Upselling). | REVENUE MGMT |
+| **NON_ROOMS_REVENUE_PCT** | Peso de ingresos extra-habitación sobre el total. | $NON\_ROOMS\_REVENUE\_PCT = \frac{OPERATING\_REVENUE - ROOMS\_REVENUE}{OPERATING\_REVENUE}$ | Capacidad de diversificación del negocio hotelero. | REVENUE MGMT |
+| **ANCILLARY_REV_POR** | Ingresos auxiliares por habitación ocupada. | $ANCILLARY\_REV\_POR = \frac{DAY\_PASS + OTHER\_DEPT\_REVENUE}{RN}$ | Rentabilidad de servicios complementarios por estancia. | REVENUE MGMT |
+| **OTHER_REV_POR** | Ingresos de otros departamentos por habitación ocupada. | $OTHER\_REV\_POR = \frac{OTHER\_DEPT\_REVENUE}{RN}$ | Rendimiento de servicios periféricos (Spa, Parking, etc). | REVENUE MGMT |
+| **GOP** | Beneficio Operativo Bruto (Gross Operating Profit). | $GOP = GOP$ | Resultado de la gestión operativa del hotel antes de fijos. | RENTABILIDAD |
+| **GOPPAR** | Beneficio operativo por habitación disponible. | $GOPPAR = \frac{GOP}{HABITACIONES}$ | Medición de la rentabilidad final por activo físico. | RENTABILIDAD |
+| **GOP_MARGIN** | Margen de beneficio sobre los ingresos totales. | $GOP\_MARGIN = \frac{GOP}{OPERATING\_REVENUE}$ | Eficiencia en la conversión de ventas a beneficio bruto. | RENTABILIDAD |
+| **PROFIT_POR** | Beneficio operativo por habitación ocupada. | $PROFIT\_POR = \frac{GOP}{RN}$ | Ganancia neta generada por cada estancia vendida. | RENTABILIDAD |
 
+### Guía de Referencia de Métricas Hoteleras (Estándar USALI)
+
+Esta guía define los pilares terminológicos para el análisis de rendimiento hotelero, diferenciando entre eficiencia operativa y rendimiento del activo.
+
+---
+
+## 1. Dimensiones de Cálculo (PAR vs. POR)
+
+| Sufijo | Término Completo | Base de Cálculo | Significado de Negocio |
+| :--- | :--- | :--- | :--- |
+| **PAR** | Per Available Room | Habitaciones Totales | Mide el **rendimiento del activo**. Evalúa el éxito del hotel independientemente de si las habitaciones están ocupadas o vacías. |
+| **POR** | Per Occupied Room | Room Nights (RN) | Mide la **eficiencia operativa**. Evalúa cuánto se gasta o se ingresa por cada cliente real alojado. |
+
+---
+
+## 2. Definiciones de Negocio
+
+### Restauración (F&B - Food & Beverage)
+* **F&B Revenue:** Ingresos totales de puntos de venta (Restaurantes, Bares, Room Service, Banquetes).
+* **Food/Beverage Cost:** Coste de la materia prima (escandallo). Se expresa habitualmente en porcentaje sobre su propia venta.
+* **MICE / Banquetes:** Segmento de grupos y eventos. Se analiza su contribución para entender la dependencia de eventos sociales o corporativos.
+
+### Regímenes Alimenticios (Pension Mix)
+* **AD (Alojamiento y Desayuno):** Solo pernoctación y desayuno.
+* **MP (Media Pensión):** Desayuno + 1 comida principal.
+* **PC (Pensión Completa):** Desayuno + Almuerzo + Cena.
+* **Lógica:** El análisis de estos porcentajes permite identificar si el ingreso de F&B es cautivo (incluido en reserva) o incremental (venta directa en el hotel).
+
+### Rentabilidad Operativa
+* **GOP (Gross Operating Profit):** Beneficio Bruto Operativo. Es el resultado de: `Ingresos Totales - Gastos Operativos`. Es la métrica clave para evaluar la gestión del Director del Hotel.
+* **Labor Cost:** Coste de personal. Es el gasto más crítico en hotelería; se mide su ratio sobre ingresos para evaluar la productividad.
+
+---
+
+## 3. Glosario de Variables Comunes
+* **RN (Room Nights):** Suma de habitaciones vendidas cada noche.
+* **HABITACIONES:** Inventario físico total disponible del hotel.
+* **OPERATING_REVENUE:** Suma de todos los ingresos de todos los departamentos operativos.
+* **OPEX:** Gastos de explotación (suministros, reparaciones, limpieza, etc.).
 ### 3. Problemas que Resuelve la IA Agéntica
 
 ##### 3.1 Eliminación del Sesgo Interpretativo
