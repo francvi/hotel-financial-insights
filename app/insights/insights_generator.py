@@ -1,7 +1,8 @@
-from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field
 from typing import List
 from app.config import settings
+
+from integration.langfuse import langfuse_handler, langfuse_client
 
 
 llm = None
@@ -41,7 +42,7 @@ class LLMInsightsResponse(BaseModel):
 structured_llm = llm.with_structured_output(LLMInsightsResponse)
 
 
-def gen_insight(kpi_results: str) -> LLMInsightsResponse:
+def gen_insight(kpi_results: str, portfolio_context: str) -> LLMInsightsResponse:
     response = structured_llm.invoke(
         f"""You're an expert Financial Analyst working for a Hotel Group. You'll receive KPIs results and your task is to extract valuable insights from those. Focus on the top 3 with more impact on the business.
 
@@ -57,7 +58,11 @@ def gen_insight(kpi_results: str) -> LLMInsightsResponse:
 
         [KPIs]
         {kpi_results}
-        """
+        """,
+        config={
+            "callbacks": [langfuse_handler] if langfuse_handler else [],
+            "metadata": {"source": "insights_engine"},
+        },
     )
 
     return response

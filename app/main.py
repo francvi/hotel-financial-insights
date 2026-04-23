@@ -26,7 +26,7 @@ from suggestions.db import clear as clear_suggestions  # noqa: E402
 from suggestions.generator import gen_followup  # noqa: E402
 from load_insights import load_insights  # noqa: E402
 from load_suggestions import load_suggestions  # noqa: E402
-from kpis import kpi_service
+from integration.langfuse import langfuse_handler, langfuse_client
 
 _insights: dict = {}
 _suggestions: dict = {}
@@ -99,7 +99,12 @@ async def chat(body: ChatRequest) -> EventSourceResponse:
     async def token_stream():
         seen_tool_calls: set[str] = set()
         async for token, _metadata in _agent.astream(
-            {"messages": messages}, stream_mode="messages"
+            {"messages": messages},
+            stream_mode="messages",
+            config={
+                "callbacks": [langfuse_handler] if langfuse_handler else [],
+                "metadata": {"source": "chat_engine"},
+            },
         ):
             if isinstance(token, ToolMessage):
                 continue
