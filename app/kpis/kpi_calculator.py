@@ -280,6 +280,7 @@ class KpiService:
         return md
 
     def get_portafolio_context(self) -> str:
+        """Retrieves the hotel portfolio details"""
         context_cols = [
             "HOTEL",
             "CONTINENTE",
@@ -299,4 +300,4 @@ class KpiService:
 kpi_service = KpiService(db_path=sqlite_db)
 
 # Generar y mostrar los resultados en consola
-print(kpi_service.format_kpi_markdown())
+# print(kpi_service.format_kpi_markdown())
