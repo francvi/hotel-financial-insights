@@ -19,13 +19,18 @@ if settings.CHATBOT_LLM_PROVIDER == "openai":
 
 
 def build_agent(tools=None, system_prompt=None):
+    default_tools = [
+        kpi_service.overall_kpis_annual,
+        kpi_service.kpis_by_hotel_annual,
+        kpi_service.kpis_monthly,
+    ]
+
+    if settings.ENABLE_CHART_TOOL:
+        from .chart_tool import generate_time_series_chart
+        default_tools.append(generate_time_series_chart)
+
     return create_agent(
         model=llm,
-        tools=tools
-        or [
-            kpi_service.overall_kpis_annual,
-            kpi_service.kpis_by_hotel_annual,
-            kpi_service.kpis_monthly,
-        ],
+        tools=tools or default_tools,
         system_prompt=system_prompt or SYSTEM_PROMPT,
     )

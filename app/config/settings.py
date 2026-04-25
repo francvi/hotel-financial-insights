@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     CHATBOT_LLM_PROVIDER: str = os.getenv("CHATBOT_LLM_PROVIDER", "ollama")
     INSIGHTS_LLM_PROVIDER: str = os.getenv("INSIGHTS_LLM_PROVIDER", "ollama")
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
+    ENABLE_CHART_TOOL: bool = os.getenv("ENABLE_CHART_TOOL", "true").lower() == "true"
 
     model_config = SettingsConfigDict(env_file=".env")
 

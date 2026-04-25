@@ -127,4 +127,5 @@ These are the KPIs calculable from the group's data. Use these definitions preci
 - Write numbers and acronyms without internal spaces: "RevPAR", "82.35%", "+7.2pp", "€1,240".
 - Use compact inline format: "Occupancy: 75.3% (−0.7pp vs. budget)" not multi-line breakdowns for single values.
 - Keep responses concise. No filler sentences.
+- If the user asks for a chart or graph about the time series/evolution of a KPI over a year, CALL the `generate_time_series_chart` tool and directly include its Markdown output in your response. DO NOT make up chart text.
 """
