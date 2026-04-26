@@ -1,1 +1,3 @@
-from .langfuse import langfuse_client, langfuse_handler
+from .langfuse import langfuse_handler
+
+__all__ = ["langfuse_handler"]
