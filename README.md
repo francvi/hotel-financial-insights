@@ -1,160 +1,87 @@
-# 🏨 Hotel Financial KPI Dataset – PoC README
+# Hotel Financial Insights
 
-## 📌 Project Context
-**Title:** Del Dashboard al Insight Financiero con IA: Análisis y Comentarios Automáticos del Reporting Package Hotelero
-
-This dataset has been synthetically generated to support a Proof of Concept (PoC) focused on transforming hotel dashboards into automated financial insights using AI.
-
-The goal is to simulate a realistic hotel reporting environment where key performance indicators (KPIs) can be analyzed and translated into natural language commentary.
+PoC de análisis financiero hotelero con IA generativa. Convierte KPIs de un reporting package en insights automáticos, responde preguntas en lenguaje natural y sugiere análisis relevantes.
 
 ---
 
-## 🎯 Scope of the PoC
+## Stack tecnológico
 
-This PoC focuses exclusively on the **core hotel revenue KPIs**, which are the industry standard for performance analysis:
+**Backend**
+- Python 3.12 + FastAPI (API REST + SSE streaming)
+- LangChain — agente con tool calling
+- OpenAI GPT (ver [selección de modelos](LLM.md))
+- SQLite — persistencia de KPIs, insights y feedback
+- Loguru — logging estructurado con rotación de ficheros
+- Langfuse — observabilidad de LLMs
 
-- Occupancy Rate
-- ADR (Average Daily Rate)
-- RevPAR (Revenue per Available Room)
-
-Additionally, the dataset includes **Month-over-Month (MoM) variation metrics**, enabling the generation of automated insights.
-
----
-
-## 📊 Dataset Overview
-
-- **Granularity:** Monthly
-- **Time Range:** January 2023 – December 2024
-- **Entities:** 3 hotels
-- **Type:** Synthetic (simulated but realistic distributions)
-
-Each row represents the performance of one hotel in a given month.
+**Frontend**
+- Alpine.js v3 — reactividad
+- Tailwind CSS — estilos
+- Marked.js — renderizado de markdown
 
 ---
 
-## 🧾 Data Dictionary
+## Arquitectura
 
-### 🔹 Identifiers
-- `hotel_name`: Name of the hotel
-- `month`: Reporting period (YYYY-MM)
+```
+app/
+├── agent/        # Agente conversacional (LangChain + OpenAI)
+├── insights/     # Generación y persistencia de insights
+├── suggestions/  # Sugerencias de seguimiento contextuales
+├── feedback/     # Thumbs up/down por respuesta
+├── kpis/         # Cálculo de KPIs desde SQLite
+├── integration/  # OpenAI, Langfuse, carga de DB
+├── config/       # Settings (env vars)
+└── static/       # Frontend (index.html)
+```
 
----
-
-### 🔹 Core KPIs
-
-#### 1. Occupancy Rate (`occupancy_rate`)
-- Definition: Percentage of available rooms that were sold
-- Formula:
-  Occupancy = Rooms Sold / Rooms Available
-
----
-
-#### 2. ADR – Average Daily Rate (`ADR`)
-- Definition: Average revenue earned per sold room
-- Formula:
-  ADR = Revenue Rooms / Rooms Sold
+Diseño stateless: el agente se construye por petición. El frontend propaga los insights activos como contexto en cada mensaje.
 
 ---
 
-#### 3. RevPAR – Revenue per Available Room (`RevPAR`)
-- Definition: Revenue generated per available room
-- Formula:
-  RevPAR = Revenue Rooms / Rooms Available
-  OR
-  RevPAR = ADR × Occupancy
+## Requisitos previos
+
+- Python 3.12+
+- Clave de API de OpenAI
 
 ---
 
-### 🔹 Supporting Operational Metrics
+## Puesta en marcha
 
-- `rooms_available`: Total available rooms per period
-- `rooms_sold`: Total rooms sold
-- `revenue_rooms`: Revenue from room sales
+```bash
+# 1. Clonar y crear entorno virtual
+python -m venv venv
+source venv/bin/activate
 
----
+# 2. Instalar dependencias
+pip install -r requirements.txt
 
-### 🔹 Financial Metrics (contextual, not core for PoC)
+# 3. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con OPENAI_API_KEY (y opcionalmente las claves de Langfuse)
 
-- `revenue_FnB`: Food & Beverage revenue
-- `total_revenue`: Total hotel revenue
-- `operating_costs`: Operational expenses
-- `GOP`: Gross Operating Profit
+# 4. Arrancar el servidor
+uvicorn app.main:app --reload
+```
 
----
+Abrir [http://localhost:8000](http://localhost:8000) en el navegador.
 
-### 🔹 Derived Metrics (Critical for AI Insights)
+### Variables de entorno
 
-#### Month-over-Month Change (%)
-
-- `RevPAR_mom_change_%`
-- `ADR_mom_change_%`
-- `occupancy_rate_mom_change_%`
-
-Definition:
-Percentage change compared to the previous month for the same hotel.
-
----
-
-## 🤖 AI Use Case
-
-The dataset is designed to support the development of an AI layer capable of:
-
-### 1. Trend Detection
-- Identify increases, decreases, or stability in KPIs
-
-### 2. Driver Analysis
-- Explain *why* a KPI changed
-  - Demand-driven (Occupancy)
-  - Price-driven (ADR)
-
-### 3. Automated Commentary Generation
-
-Example outputs:
-
-- "RevPAR increased 8% compared to last month, driven by higher occupancy while ADR remained stable."
-- "ADR declined despite stable occupancy, suggesting pricing pressure."
-- "Performance improvement was driven primarily by demand growth."
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `OPENAI_API_KEY` | Sí | Clave de API de OpenAI |
+| `DB_NAME` | No | Nombre del fichero SQLite (default: `hotel_financial_insights.db`) |
+| `LANGFUSE_SECRET_KEY` | No | Observabilidad con Langfuse |
+| `LANGFUSE_PUBLIC_KEY` | No | Observabilidad con Langfuse |
+| `LANGFUSE_HOST` | No | Host de Langfuse (default: cloud) |
 
 ---
 
-## 🧠 Analytical Logic for the PoC
+## Selección de modelos LLM
 
-The PoC can implement rule-based or AI-based logic such as:
+Ver [LLM.md](LLM.md) para la justificación de modelos y temperaturas por módulo.
 
-- If RevPAR ↑ and ADR ↑ → Pricing-driven growth
-- If RevPAR ↑ and Occupancy ↑ → Demand-driven growth
-- If ADR ↓ and Occupancy ↑ → Volume strategy
-- If RevPAR ↓ → Performance decline
+## Pruebas
 
----
-
-## ⚠️ Limitations
-
-- Synthetic data (not real hotel data)
-- No competitor benchmarking (e.g., RevPAR Index)
-- No segmentation (e.g., leisure vs business)
-- No daily granularity
-
----
-
-## 🚀 Future Enhancements
-
-To extend the PoC:
-
-- Add Budget vs Actuals
-- Include seasonality flags
-- Incorporate external demand drivers (events, holidays)
-- Add competitor benchmarking KPIs
-- Train ML/NLP models for commentary generation
-
----
-
-## ✅ Summary
-
-This dataset provides a minimal but robust foundation to:
-
-- Build a KPI dashboard
-- Detect performance changes
-- Generate automated financial insights
-
-It is intentionally scoped to the **three core KPIs** to ensure clarity, focus, and feasibility for a PoC.
+Ver [UAT.md](UAT.md) para los casos de prueba de aceptación.

@@ -51,7 +51,27 @@ class KpiService:
         "GOPPAR": lambda d: d["GOP"] / d["HABITACIONES"],
         "GOP_MARGIN": lambda d: d["GOP"] / d["OPERATING_REVENUE"],
         "PROFIT_POR": lambda d: d["GOP"] / d["RN"],
+        # 5. DESGLOSE DEPARTAMENTAL (valores absolutos para breakdown)
+        "OPERATING_REVENUE": lambda d: d["OPERATING_REVENUE"],
+        "ROOMS_REVENUE": lambda d: d["ROOMS_REVENUE"],
+        "ROOMS_OPEX": lambda d: d["ROOMS_OPEX"],
+        "ROOMS_PERSONNEL": lambda d: d["ROOMS_PERSONNEL"],
+        "ROOMS_PROFIT": lambda d: d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"],
+        "ROOMS_PROFIT_MARGIN": lambda d: (d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"]) / d["ROOMS_REVENUE"],
+        "FB_REVENUE": lambda d: d["FB_REVENUE"],
+        "FB_OPEX": lambda d: d["FB_OPEX"],
+        "FB_PERSONNEL": lambda d: d["FB_PERSONNEL"],
+        "FB_PROFIT": lambda d: d["FB_PROFIT"],
+        "UNDISTRIB_OPEX": lambda d: d["UNDISTRIB_OPEX"],
     }
+
+    DEPARTMENTAL_METRICS = [
+        "OPERATING_REVENUE",
+        "ROOMS_REVENUE", "ROOMS_OPEX", "ROOMS_PERSONNEL", "ROOMS_PROFIT", "ROOMS_PROFIT_MARGIN",
+        "FB_REVENUE", "FB_OPEX", "FB_PERSONNEL", "FB_PROFIT", "F&B_GOP_MARGIN",
+        "UNDISTRIB_OPEX", "UNDISTRIB_OPEX_Pct",
+        "GOP", "GOP_MARGIN",
+    ]
 
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -165,17 +185,35 @@ class KpiService:
         """Retrieves all kpis by month for the given year"""
         df_original = self.df
         try:
-            df = self.df[self.df["ANIO"] == year].copy()
+            self.df = self.df[self.df["ANIO"] == year].copy()
             metrics = [
                 metric for category in self.categories.values() for metric in category
             ]
-            merged = self._agg_real_budget(["MES"], metrics)
+            return self._agg_real_budget(["MES"], metrics)
         except Exception as e:
             print(f"Error occurred while calculating monthly KPIs for {year}: {e}")
-            merged = pd.DataFrame()
+            return pd.DataFrame()
         finally:
             self.df = df_original
-        return merged
+
+    def departmental_kpis_annual(self, year: int | None = None) -> pd.DataFrame:
+        """Retrieves Rooms, F&B, and Undistributed departmental revenue/opex/personnel/profit breakdown by year. Optionally filter to a specific year."""
+        df_original = self.df
+        try:
+            if year is not None:
+                self.df = self.df[self.df["ANIO"] == year].copy()
+            return self._agg_real_budget(["ANIO"], self.DEPARTMENTAL_METRICS)
+        finally:
+            self.df = df_original
+
+    def departmental_kpis_monthly(self, year: int = 2025) -> pd.DataFrame:
+        """Retrieves Rooms, F&B, and Undistributed departmental revenue/opex/personnel/profit breakdown month by month for the given year."""
+        df_original = self.df
+        try:
+            self.df = self.df[self.df["ANIO"] == year].copy()
+            return self._agg_real_budget(["MES"], self.DEPARTMENTAL_METRICS)
+        finally:
+            self.df = df_original
 
     def format_kpi_markdown(self) -> str:
         annual = self.overall_kpis_annual()
