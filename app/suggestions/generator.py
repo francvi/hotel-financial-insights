@@ -51,7 +51,7 @@ def gen_suggestions(kpi_results: str) -> LLMSuggestionsResponse:
 Rules:
 - Questions must be grounded in the actual data (reference specific hotels, months, or metrics that stand out)
 - Cover a mix of: occupancy, ADR, RevPAR, GOP margin, budget variance, and trends
-- Each question should be concise (max 10 words in English)
+- Each English question MUST be 10 words or fewer — count every word before submitting
 - Provide each question in both English and Spanish
 
 [KPI DATA]

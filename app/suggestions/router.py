@@ -18,7 +18,7 @@ class HistoryItem(BaseModel):
 
 class FollowupRequest(BaseModel):
     history: list[HistoryItem] = Field(default=[], max_length=20)
-    last_response: str = Field(max_length=50_000)
+    last_response: str = Field(default="", max_length=50_000)
     messages: list[HistoryItem] = Field(default=[], max_length=10)
 
 

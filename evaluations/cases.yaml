@@ -1,0 +1,195 @@
+# Casos de prueba UAT — Hotel Financial Insights
+# Cada caso define: endpoint, payload y criterios evaluados por el juez LLM
+
+# ──────────────────────────────────────────────────────────────
+# MÓDULO: AGENTE
+# ──────────────────────────────────────────────────────────────
+
+- id: agent_kpi_directo
+  module: agent
+  description: Consulta directa de un KPI anual
+  endpoint: POST /api/chat
+  input:
+    message: "What is the overall RevPAR for 2025?"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - La respuesta incluye un valor numérico de RevPAR
+    - El valor está en un rango razonable para RevPAR hotelero (entre $30 y $600)
+    - La respuesta especifica el año o período al que corresponde el dato (2025)
+
+- id: agent_fuera_de_alcance
+  module: agent
+  description: Rechazo de consulta fuera del dominio financiero hotelero
+  endpoint: POST /api/chat
+  input:
+    message: "Tell me a joke about pirates"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - La respuesta rechaza la solicitud sin cumplirla
+    - No cuenta ningún chiste ni proporciona contenido de entretenimiento
+    - Indica que solo puede ayudar con análisis financiero hotelero
+
+- id: agent_idioma_español
+  module: agent
+  description: Respuesta completa en español cuando se solicita
+  endpoint: POST /api/chat
+  input:
+    message: "¿Cuál fue la ocupación media del portafolio en 2025?"
+    history: []
+    language: es
+    insights: []
+  criteria:
+    - La respuesta está completamente en español
+    - Incluye un valor de ocupación expresado como porcentaje
+    - Usa terminología financiera hotelera correcta en español
+
+- id: agent_comparacion_temporal
+  module: agent
+  description: Comparación de un KPI entre dos años distintos
+  endpoint: POST /api/chat
+  input:
+    message: "Compare the GOP margin between 2025 and 2026. Which year performed better?"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - Menciona explícitamente tanto 2025 como 2026
+    - Incluye valores numéricos o porcentajes de GOP margin para ambos años
+    - Identifica cuál año tuvo mejor margen y lo justifica
+    - Los valores de GOP margin para ambos años están expresados como porcentajes (entre 0% y 100%)
+
+- id: agent_desviacion_presupuesto
+  module: agent
+  description: Análisis de desviación real vs presupuesto por hotel
+  endpoint: POST /api/chat
+  input:
+    message: "Which hotels had the largest gap between budgeted and actual RevPAR in 2025?"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - Menciona al menos un nombre de hotel específico del portafolio
+    - Compara valores REAL vs BUDGET de RevPAR
+    - Cuantifica o describe la magnitud de la desviación
+
+- id: agent_desglose_departamental
+  module: agent
+  description: Desglose del GOP por departamento usando las nuevas herramientas
+  endpoint: POST /api/chat
+  input:
+    message: "Break down the 2025 GOP by department: Rooms, F&B, and Undistributed costs"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - Menciona el departamento de Rooms (habitaciones) con valores numéricos
+    - Menciona el departamento de F&B (alimentos y bebidas) con valores numéricos
+    - Menciona los costes Undistributed (no distribuidos)
+    - Los valores son coherentes entre sí y con el GOP total
+
+- id: agent_tendencia_mensual
+  module: agent
+  description: Identificación de mejor y peor mes a partir de datos mensuales
+  endpoint: POST /api/chat
+  input:
+    message: "Show the monthly RevPAR trend for 2025 and identify the best and worst performing months"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - Presenta datos de RevPAR para múltiples meses de 2025
+    - Identifica el mes con mejor RevPAR con su valor numérico
+    - Identifica el mes con peor RevPAR con su valor numérico
+    - Los valores de RevPAR mencionados están en un rango razonable (entre $30 y $600)
+
+- id: agent_multiturn
+  module: agent
+  description: Coherencia contextual en conversación de múltiples turnos
+  endpoint: POST /api/chat
+  input:
+    message: "And what about their occupancy rates? Which had higher occupancy?"
+    history:
+      - role: user
+        content: "Compare the RevPAR of the top 2 hotels in 2025"
+      - role: assistant
+        content: "Based on the 2025 data, the top two hotels by RevPAR are the ones with the highest revenue per available room in the portfolio."
+    language: en
+    insights: []
+  criteria:
+    - La respuesta mantiene el contexto de los hoteles mencionados anteriormente
+    - Compara tasas de ocupación entre al menos dos hoteles
+    - No pide clarificación innecesaria sobre a qué hoteles se refiere
+
+- id: agent_consulta_ambigua
+  module: agent
+  description: Manejo de consulta vaga con interpretación útil
+  endpoint: POST /api/chat
+  input:
+    message: "How is the portfolio doing?"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - No devuelve una respuesta vacía ni pide que se reformule la pregunta
+    - Presenta un resumen con al menos 2 KPIs distintos con valores numéricos concretos
+    - Menciona al menos un año específico (2025 o 2026) al que corresponden los datos
+
+# ──────────────────────────────────────────────────────────────
+# MÓDULO: INSIGHTS
+# ──────────────────────────────────────────────────────────────
+
+- id: insights_estructura
+  module: insights
+  description: Los insights devueltos tienen estructura completa y correcta
+  endpoint: GET /api/insights
+  input: {}
+  criteria:
+    - La respuesta contiene exactamente 3 insights
+    - Cada insight tiene los campos text_en, text_es, value, recommendation_en y recommendation_es
+    - Ningún campo está vacío o es nulo
+    - Los valores numéricos en el campo 'value' son coherentes (porcentajes, importes)
+
+- id: insights_bilingue
+  module: insights
+  description: Los insights están correctamente traducidos al español
+  endpoint: GET /api/insights
+  input: {}
+  criteria:
+    - El campo text_es de cada insight está en español
+    - El campo recommendation_es de cada insight está en español
+    - Las traducciones son coherentes con su versión en inglés
+
+# ──────────────────────────────────────────────────────────────
+# MÓDULO: SUGERENCIAS
+# ──────────────────────────────────────────────────────────────
+
+- id: suggestions_estructura
+  module: suggestions
+  description: Las sugerencias iniciales tienen estructura y cantidad correctas
+  endpoint: GET /api/suggestions
+  input: {}
+  criteria:
+    - La respuesta contiene exactamente 6 sugerencias
+    - Cada sugerencia tiene los campos text_en y text_es
+    - Las preguntas en inglés tienen un máximo de 10 palabras
+    - Las preguntas en español son traducciones coherentes del inglés
+
+- id: suggestions_followup
+  module: suggestions
+  description: Las sugerencias de seguimiento son contextuales a la conversación
+  endpoint: POST /api/suggestions/followup
+  input:
+    messages:
+      - role: user
+        content: "What was the RevPAR for 2025?"
+      - role: assistant
+        content: "The overall RevPAR for 2025 was $185, representing a 3% variance vs budget."
+  criteria:
+    - La respuesta contiene exactamente 3 preguntas de seguimiento
+    - Las preguntas son relevantes para la conversación sobre RevPAR y presupuesto
+    - No repiten la pregunta ya realizada en el historial
+    - Cada pregunta está en inglés y español

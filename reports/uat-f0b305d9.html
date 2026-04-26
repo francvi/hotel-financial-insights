@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reporte UAT — f0b305d9</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { border-bottom: 2px solid #e5e5e5; padding-bottom: 10px; }
+  h3 { margin-top: 32px; color: #444; text-transform: capitalize; }
+  .summary { display: flex; gap: 24px; margin: 20px 0; }
+  .stat { background: #f5f5f5; border-radius: 8px; padding: 12px 20px; text-align: center; }
+  .stat-value { font-size: 2em; font-weight: 700; }
+  .stat-label { font-size: 0.8em; color: #666; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e5e5e5; }
+  th { background: #f5f5f5; font-weight: 600; }
+  .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 700; }
+  .badge.pass { background: #d1fae5; color: #065f46; }
+  .badge.fail { background: #fee2e2; color: #991b1b; }
+  details { border: 1px solid #e5e5e5; border-radius: 6px; margin: 8px 0; }
+  summary { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  summary:hover { background: #f9f9f9; }
+  .meta { margin-left: auto; font-size: 0.8em; color: #888; }
+  .criteria { padding: 12px 16px; border-top: 1px solid #f0f0f0; }
+  .crit-pass { color: #065f46; margin: 4px 0; }
+  .crit-fail { color: #991b1b; margin: 4px 0; }
+  .reasoning { margin: 2px 0 6px 16px; font-size: 0.9em; color: #b91c1c; font-style: italic; }
+  .error { color: #b91c1c; }
+  footer { margin-top: 40px; color: #999; font-size: 0.85em; border-top: 1px solid #e5e5e5; padding-top: 12px; }
+</style>
+</head>
+<body>
+<h1>Reporte UAT <code>f0b305d9</code></h1>
+<p><strong>Fecha:</strong> 2026-04-26 20:48:24</p>
+
+<div class="summary">
+  <div class="stat"><div class="stat-value">13/13</div><div class="stat-label">Casos pasados</div></div>
+  <div class="stat"><div class="stat-value">100%</div><div class="stat-label">Pass rate</div></div>
+  <div class="stat"><div class="stat-value">98%</div><div class="stat-label">Score medio</div></div>
+</div>
+
+<h2>Resumen por módulo</h2>
+<table>
+  <tr><th>Módulo</th><th>Casos</th><th>Pasados</th><th>Fallidos</th><th>Score medio</th></tr>
+  <tr><td>agent</td><td>9</td><td>9</td><td>0</td><td>97%</td></tr>
+<tr><td>insights</td><td>2</td><td>2</td><td>0</td><td>100%</td></tr>
+<tr><td>suggestions</td><td>2</td><td>2</td><td>0</td><td>100%</td></tr>
+
+</table>
+
+<h2>Detalle de casos</h2>
+<h3>Agent</h3>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_comparacion_temporal</code> — Comparación de un KPI entre dos años distintos
+    <span class="meta">100% · 3883ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ 1. Menciona explícitamente tanto 2025 como 2026</div>
+<div class="crit-pass">✓ 2. Incluye valores numéricos o porcentajes de GOP margin para ambos años</div>
+<div class="crit-pass">✓ 3. Identifica cuál año tuvo mejor margen y lo justifica</div>
+<div class="crit-pass">✓ 4. Los valores de GOP margin para ambos años están expresados como porcentajes (entre 0% y 100%)</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_consulta_ambigua</code> — Manejo de consulta vaga con interpretación útil
+    <span class="meta">100% · 6324ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ No devuelve una respuesta vacía ni pide que se reformule la pregunta</div>
+<div class="crit-pass">✓ Presenta un resumen con al menos 2 KPIs distintos con valores numéricos concretos</div>
+<div class="crit-pass">✓ Menciona al menos un año específico (2025 o 2026) al que corresponden los datos</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_desglose_departamental</code> — Desglose del GOP por departamento usando las nuevas herramientas
+    <span class="meta">75% · 4676ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ 1. Menciona el departamento de Rooms (habitaciones) con valores numéricos</div>
+<div class="crit-pass">✓ 2. Menciona el departamento de F&B (alimentos y bebidas) con valores numéricos</div>
+<div class="crit-pass">✓ 3. Menciona los costes Undistributed (no distribuidos)</div>
+<div class="crit-fail">✗ 4. Los valores son coherentes entre sí y con el GOP total<div class="reasoning">Aunque se reporta un total GOP, las cifras de Rooms, F&B y Undistributed no cuadran claramente entre sí con el total presentado, y además aparecen inconsistencias internas en los signos de las desviaciones.</div></div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_desviacion_presupuesto</code> — Análisis de desviación real vs presupuesto por hotel
+    <span class="meta">100% · 4266ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ Menciona al menos un nombre de hotel específico del portafolio</div>
+<div class="crit-pass">✓ Compara valores REAL vs BUDGET de RevPAR</div>
+<div class="crit-pass">✓ Cuantifica o describe la magnitud de la desviación</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_fuera_de_alcance</code> — Rechazo de consulta fuera del dominio financiero hotelero
+    <span class="meta">100% · 1285ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta rechaza la solicitud sin cumplirla</div>
+<div class="crit-pass">✓ No cuenta ningún chiste ni proporciona contenido de entretenimiento</div>
+<div class="crit-pass">✓ Indica que solo puede ayudar con análisis financiero hotelero</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_idioma_español</code> — Respuesta completa en español cuando se solicita
+    <span class="meta">100% · 2180ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta está completamente en español</div>
+<div class="crit-pass">✓ Incluye un valor de ocupación expresado como porcentaje</div>
+<div class="crit-pass">✓ Usa terminología financiera hotelera correcta en español</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_kpi_directo</code> — Consulta directa de un KPI anual
+    <span class="meta">100% · 2445ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta incluye un valor numérico de RevPAR</div>
+<div class="crit-pass">✓ El valor está en un rango razonable para RevPAR hotelero (entre $30 y $600)</div>
+<div class="crit-pass">✓ La respuesta especifica el año o período al que corresponde el dato (2025)</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_multiturn</code> — Coherencia contextual en conversación de múltiples turnos
+    <span class="meta">100% · 2852ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta mantiene el contexto de los hoteles mencionados anteriormente</div>
+<div class="crit-pass">✓ Compara tasas de ocupación entre al menos dos hoteles</div>
+<div class="crit-pass">✓ No pide clarificación innecesaria sobre a qué hoteles se refiere</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>agent_tendencia_mensual</code> — Identificación de mejor y peor mes a partir de datos mensuales
+    <span class="meta">100% · 3816ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ Presenta datos de RevPAR para múltiples meses de 2025</div>
+<div class="crit-pass">✓ Identifica el mes con mejor RevPAR con su valor numérico</div>
+<div class="crit-pass">✓ Identifica el mes con peor RevPAR con su valor numérico</div>
+<div class="crit-pass">✓ Los valores de RevPAR mencionados están en un rango razonable (entre $30 y $600)</div>
+</div>
+</details>
+<h3>Insights</h3>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>insights_bilingue</code> — Los insights están correctamente traducidos al español
+    <span class="meta">100% · 14ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ El campo text_es de cada insight está en español</div>
+<div class="crit-pass">✓ El campo recommendation_es de cada insight está en español</div>
+<div class="crit-pass">✓ Las traducciones son coherentes con su versión en inglés</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>insights_estructura</code> — Los insights devueltos tienen estructura completa y correcta
+    <span class="meta">100% · 14ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta contiene exactamente 3 insights</div>
+<div class="crit-pass">✓ Cada insight tiene los campos text_en, text_es, value, recommendation_en y recommendation_es</div>
+<div class="crit-pass">✓ Ningún campo está vacío o es nulo</div>
+<div class="crit-pass">✓ Los valores numéricos en el campo 'value' son coherentes (porcentajes, importes)</div>
+</div>
+</details>
+<h3>Suggestions</h3>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>suggestions_estructura</code> — Las sugerencias iniciales tienen estructura y cantidad correctas
+    <span class="meta">100% · 12ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta contiene exactamente 6 sugerencias</div>
+<div class="crit-pass">✓ Cada sugerencia tiene los campos text_en y text_es</div>
+<div class="crit-pass">✓ Las preguntas en inglés tienen un máximo de 10 palabras</div>
+<div class="crit-pass">✓ Las preguntas en español son traducciones coherentes del inglés</div>
+</div>
+</details>
+
+<details >
+  <summary><span class="badge pass">PASS</span> <code>suggestions_followup</code> — Las sugerencias de seguimiento son contextuales a la conversación
+    <span class="meta">100% · 2049ms</span>
+  </summary>
+  <div class="criteria"><div class="crit-pass">✓ La respuesta contiene exactamente 3 preguntas de seguimiento</div>
+<div class="crit-pass">✓ Las preguntas son relevantes para la conversación sobre RevPAR y presupuesto</div>
+<div class="crit-pass">✓ No repiten la pregunta ya realizada en el historial</div>
+<div class="crit-pass">✓ Cada pregunta está en inglés y español</div>
+</div>
+</details>
+
+
+<footer>Generado el 2026-04-26 22:49</footer>
+</body>
+</html>

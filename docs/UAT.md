@@ -1,332 +1,122 @@
-# Documento de Casos de Prueba
+# Evaluaciones UAT
 
-## Proyecto: Dashboard de Insights Financieros Hoteleros
+## Enfoque: LLM-as-judge
 
----
+Las evaluaciones validan el comportamiento real del sistema — no tests unitarios, sino comprobaciones de extremo a extremo contra la API en ejecución.
 
-## 1. Introducción
+### Por qué no tests convencionales
 
-El presente documento define los casos de prueba diseñados para validar el correcto funcionamiento del sistema basado en modelos de lenguaje (LLMs).
+Los sistemas LLM no producen salidas deterministas. "El RevPAR de 2025 fue $177" y "En 2025, el RevPAR alcanzó los $177.03" son semánticamente equivalentes pero distintos como strings. Un `assertEqual` fallaría; una comparación semántica no.
 
-Dado que el sistema combina razonamiento automático con acceso a datos estructurados (SQLite), los tests se enfocan en verificar:
+### Cómo funciona
 
-- Corrección del análisis financiero
-- Uso adecuado de herramientas (tool calling)
-- Coherencia semántica de las respuestas
-- Cumplimiento de formato en salidas estructuradas
-- Robustez ante entradas ambiguas o fuera de dominio
+Cada caso de prueba define un input (mensaje, historial, idioma) y una lista de criterios en lenguaje natural. Un segundo LLM — el **juez** — recibe la pregunta original, la respuesta del sistema y los criterios, y evalúa cada uno independientemente devolviendo un veredicto (`passed: true/false`) con una frase de razonamiento.
 
----
+```
+cases.yaml → CLI runner → API real → LLM juez → pass/fail + score → SQLite
+```
 
-## 2. Estrategia de Testing
+Un caso pasa si al menos el 70% de sus criterios se cumplen.
 
-Se han definido tres categorías de pruebas:
+El juez en este proyecto es **GPT-5.4 Mini con temperatura 0** para maximizar la consistencia entre ejecuciones.
 
-### 2.1 Tests deterministas
+### Cómo escribir buenos criterios
 
-Validan casos donde existe una respuesta esperada clara (ej. valores KPI).
+La calidad del juicio depende directamente de la calidad del criterio. Cada criterio debe ser evaluable **únicamente a partir del texto de la respuesta**, sin acceso a datos externos.
 
-### 2.2 Tests de razonamiento
+| Criterio malo | Criterio bueno |
+|---|---|
+| "No inventa datos" | "El valor de RevPAR está entre $30 y $600" |
+| "Está basado en datos reales" | "Menciona el año 2025 al que corresponde el dato" |
+| "La respuesta es correcta" | "Incluye valores numéricos para Rooms, F&B y Undistributed" |
 
-Evalúan el comportamiento del modelo sin exigir coincidencia exacta de texto.
+Los criterios malos producen falsos negativos: el juez no tiene forma de verificarlos y tiende a fallar con razonamientos como "no puedo confirmar que el dato no sea inventado".
 
-### 2.3 Tests de robustez
+### Limitaciones
 
-Comprueban la capacidad del sistema para manejar:
-
-- ambigüedad
-- errores
-- inputs fuera de alcance
-
----
-
-## 3. Casos de prueba – Agente Conversacional
+- El juez no tiene acceso a los datos reales — no puede verificar exactitud numérica, solo coherencia y formato.
+- No es determinista — una respuesta borderline puede pasar o fallar entre ejecuciones. Usar para detectar tendencias, no como gate binario de CI.
+- Añade latencia y coste: una llamada LLM extra por caso evaluado.
+- El servidor debe estar activo durante la ejecución.
 
 ---
 
-### Caso 1: Consulta directa de KPI
+## Módulos cubiertos
 
-**Entrada:**
+| Módulo | Casos | Qué se valida |
+|---|---|---|
+| **Agent** | 9 | KPIs correctos, rechazo fuera de dominio, idioma, comparaciones temporales, desglose departamental, coherencia multi-turno, consultas vagas |
+| **Insights** | 2 | Estructura completa, contenido bilingüe |
+| **Suggestions** | 2 | Cantidad, formato, límite de palabras, relevancia contextual |
 
-> "What is the RevPAR in 2023?"
-
-**Comportamiento esperado:**
-
-- Selección de herramienta: consulta anual de KPIs
-- Extracción correcta del valor
-- Respuesta clara y directa
-
-**Criterios de éxito:**
-
-- El valor coincide con la base de datos
-- No se inventan datos
-- Respuesta coherente
+Los casos están definidos en [`evaluations/cases.yaml`](../evaluations/cases.yaml).
 
 ---
 
-### Caso 2: Comparación temporal
+## Ejecución
 
-**Entrada:**
+El servidor debe estar corriendo antes de ejecutar evaluaciones.
 
-> "Compare occupancy between 2022 and 2023"
+```bash
+# Todos los casos
+python evaluations/cli.py run
 
-**Comportamiento esperado:**
+# Por módulo
+python evaluations/cli.py run --module agent
+python evaluations/cli.py run --module insights
+python evaluations/cli.py run --module suggestions
 
-- Consulta de ambos periodos
-- Identificación de tendencia (incremento/disminución)
-- Explicación clara
+# Un caso concreto
+python evaluations/cli.py run --case agent_kpi_directo
 
-**Criterios de éxito:**
-
-- Comparación correcta
-- Uso adecuado de datos
-- Interpretación coherente
-
----
-
-### Caso 3: Desglose mensual
-
-**Entrada:**
-
-> "Show monthly revenue for 2023"
-
-**Comportamiento esperado:**
-
-- Uso de herramienta de datos mensuales
-- Presentación estructurada de resultados
-
-**Criterios de éxito:**
-
-- Datos completos
-- Formato legible
-- Sin omisiones
+# Servidor alternativo
+python evaluations/cli.py run --base-url http://localhost:8001
+```
 
 ---
 
-### Caso 4: Consulta ambigua
+## Inspección y benchmark
 
-**Entrada:**
+```bash
+# Ver la respuesta y criterios de la última ejecución de un caso
+python evaluations/cli.py show agent_kpi_directo
 
-> "How is the hotel performing?"
+# Historial de ejecuciones
+python evaluations/cli.py list-runs
+python evaluations/cli.py benchmark
+python evaluations/cli.py benchmark --last 5
 
-**Comportamiento esperado:**
+# Comparar dos runs (detecta mejoras y regresiones caso a caso)
+python evaluations/cli.py benchmark --run-a <run_id> --run-b <run_id>
 
-- Interpretación como análisis general
-- Uso de múltiples KPIs relevantes
-- Generación de resumen
+# Listar todos los casos disponibles
+python evaluations/cli.py list-cases
+```
 
-**Criterios de éxito:**
-
-- No responde de forma vacía
-- Incluye métricas clave
-- Explicación coherente
-
----
-
-### Caso 5: Consulta multi-herramienta
-
-**Entrada:**
-
-> "Compare budget vs actual and explain variance"
-
-**Comportamiento esperado:**
-
-- Uso de múltiples consultas
-- Cálculo o interpretación de desviaciones
-- Explicación del impacto
-
-**Criterios de éxito:**
-
-- Comparación correcta
-- Explicación razonada
-- Sin errores numéricos
+Los resultados se persisten en la tabla `evaluations` del fichero SQLite del proyecto, junto con la respuesta completa del sistema y el razonamiento del juez por criterio.
 
 ---
 
-### Caso 6: Consulta en español
+## Añadir un caso nuevo
+
+Editar `evaluations/cases.yaml` siguiendo esta estructura:
+
+```yaml
+- id: agent_mi_nuevo_caso          # único, snake_case
+  module: agent                    # agent | insights | suggestions
+  description: Descripción breve
+  endpoint: POST /api/chat         # o GET /api/insights, etc.
+  input:
+    message: "Pregunta al agente"
+    history: []
+    language: en
+    insights: []
+  criteria:
+    - Criterio observable desde el texto de la respuesta
+    - Otro criterio verificable sin datos externos
+```
+
+El caso se carga automáticamente en la próxima ejecución de `cli.py run`.
+
+**Regla para criterios:** cada criterio debe ser evaluable únicamente a partir del texto de la respuesta. Criterios como "no inventa datos" o "está basado en datos reales" no son verificables por el juez — reemplazarlos por criterios observables como "el valor está en el rango X–Y" o "menciona el año al que corresponde el dato".
 
-**Entrada:**
-
-> "¿Cuál fue la ocupación en 2023?"
-
-**Comportamiento esperado:**
-
-- Respuesta en español
-- Uso correcto de terminología financiera
-
-**Criterios de éxito:**
-
-- Idioma correcto
-- Precisión del dato
-
----
-
-### Caso 7: Consulta fuera de alcance
-
-**Entrada:**
-
-> "Tell me a joke"
-
-**Comportamiento esperado:**
-
-- Rechazo de la solicitud
-
-**Criterios de éxito:**
-
-- No responde a la petición
-- Indica limitación del sistema
-
----
-
-## 4. Casos de prueba – Generador de Insights
-
----
-
-### Caso 8: Detección de KPI dominante
-
-**Entrada:**
-
-- Tabla KPI con caída significativa de revenue
-
-**Comportamiento esperado:**
-
-- Identificación del revenue como insight principal
-
-**Criterios de éxito:**
-
-- Insight relevante seleccionado
-- Explicación coherente
-
----
-
-### Caso 9: Selección de múltiples insights
-
-**Entrada:**
-
-- Tabla con múltiples variaciones relevantes
-
-**Comportamiento esperado:**
-
-- Selección de los 3 insights más importantes
-
-**Criterios de éxito:**
-
-- Priorización correcta
-- No incluye métricas irrelevantes
-
----
-
-### Caso 10: Consistencia
-
-**Entrada:**
-
-- Mismo dataset ejecutado múltiples veces
-
-**Comportamiento esperado:**
-
-- Resultados similares o idénticos
-
-**Criterios de éxito:**
-
-- Baja variabilidad
-- Estabilidad del output
-
----
-
-## 5. Casos de prueba – Generador de Sugerencias
-
----
-
-### Caso 11: Formato de salida
-
-**Entrada:**
-
-- Datos KPI
-
-**Comportamiento esperado:**
-
-- Generación de 6 preguntas
-
-**Criterios de éxito:**
-
-- Máximo 10 palabras por pregunta
-- Formato correcto
-
----
-
-### Caso 12: Soporte bilingüe
-
-**Entrada:**
-
-- Datos KPI
-
-**Comportamiento esperado:**
-
-- Preguntas en inglés y español
-
-**Criterios de éxito:**
-
-- Ambos idiomas presentes
-- Traducción coherente
-
----
-
-### Caso 13: Diversidad
-
-**Entrada:**
-
-- Datos KPI
-
-**Comportamiento esperado:**
-
-- Preguntas variadas
-
-**Criterios de éxito:**
-
-- No repetición
-- Diferentes enfoques
-
----
-
-## 6. Criterios de Evaluación
-
-Se utilizan tres tipos de validación:
-
-### 6.1 Validación estructural
-
-- Formato correcto (JSON, schema)
-- Campos completos
-
-### 6.2 Validación numérica
-
-- Coincidencia con datos reales
-- Ausencia de valores inventados
-
-### 6.3 Validación semántica
-
-- Interpretación correcta
-- Coherencia en explicaciones
-
----
-
-## 7. Limitaciones
-
-Los sistemas basados en LLM presentan ciertas limitaciones:
-
-- No determinismo en respuestas
-- Sensibilidad a variaciones en prompts
-- Evaluación subjetiva en algunos casos
-
-Por ello, los tests combinan validaciones estrictas y heurísticas.
-
----
-
-## 8. Conclusión
-
-Los casos de prueba definidos permiten:
-
-- validar el comportamiento del sistema
-- asegurar la calidad del análisis financiero
-- detectar errores en razonamiento o integración
-
-El enfoque adoptado es adecuado para sistemas híbridos LLM + datos estructurados en un entorno académico.
