@@ -3,7 +3,7 @@ from app.config import settings
 from app.integration.ollama import init_chat_llm
 from app.kpis import kpi_service
 
-from .system_prompt import SYSTEM_PROMPT
+from .system_prompt import SYSTEM_PROMPT as _BASE_SYSTEM_PROMPT
 
 llm = None
 
@@ -28,5 +28,13 @@ def build_agent(tools=None, system_prompt=None):
             kpi_service.kpis_monthly,
             kpi_service.get_portafolio_context,
         ],
-        system_prompt=system_prompt or SYSTEM_PROMPT,
+        system_prompt=system_prompt or _BASE_SYSTEM_PROMPT,
     )
+
+
+def build_agent_with_context(insights: dict):
+    context_lines = "\n".join(
+        f"- {item['text_en']}: {item['value']}" for item in insights.get("insights", [])
+    )
+    system_prompt = f"{_BASE_SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
+    return build_agent(system_prompt=system_prompt)
