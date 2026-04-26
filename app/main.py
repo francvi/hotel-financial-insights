@@ -27,6 +27,8 @@ from suggestions.generator import gen_followup  # noqa: E402
 from load_insights import load_insights  # noqa: E402
 from load_suggestions import load_suggestions  # noqa: E402
 from integration.langfuse import langfuse_handler, langfuse_client
+from feedback.db import init_db as init_feedback_db  # noqa: E402
+from feedback.router import router as feedback_router  # noqa: E402
 
 _insights: dict = {}
 _suggestions: dict = {}
@@ -36,6 +38,7 @@ _agent = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _insights, _suggestions, _agent
+    init_feedback_db()
     _insights = load_insights()
     _suggestions = load_suggestions()
     _agent = _build_agent_with_context(_insights)
@@ -43,6 +46,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(feedback_router)
 
 
 # ── API ────────────────────────────────────────────────────────────────────
