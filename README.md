@@ -4,20 +4,25 @@ PoC de análisis financiero hotelero con IA generativa. Convierte KPIs de un rep
 
 ---
 
+## Documentación
+
+| Documento | Descripción |
+|---|---|
+| [Arquitectura](docs/ARCHITECTURE.md) | Diagrama de módulos, flujos de datos y decisiones de diseño |
+| [Tech Stack](docs/TECH_STACK.md) | Frameworks, proveedores y versiones por capa |
+| [Selección de modelos LLM](docs/LLM_SELECTION.md) | Justificación de modelos y temperaturas por módulo |
+| [Casos de prueba UAT](docs/UAT.md) | Framework de pruebas de aceptación |
+| [Business Case](docs/BUSINESS_CASE.md) | Motivación, alcance y valor del PoC |
+
+---
+
 ## Stack tecnológico
 
-**Backend**
-- Python 3.12 + FastAPI (API REST + SSE streaming)
-- LangChain — agente con tool calling
-- OpenAI GPT (ver [selección de modelos](LLM.md))
-- SQLite — persistencia de KPIs, insights y feedback
-- Loguru — logging estructurado con rotación de ficheros
-- Langfuse — observabilidad de LLMs
+**Backend** — Python 3.12 · FastAPI · LangChain · OpenAI · SQLite · Loguru · Langfuse
 
-**Frontend**
-- Alpine.js v3 — reactividad
-- Tailwind CSS — estilos
-- Marked.js — renderizado de markdown
+**Frontend** — Alpine.js v3 · Tailwind CSS · Marked.js
+
+Ver [Tech Stack completo](docs/TECH_STACK.md).
 
 ---
 
@@ -35,21 +40,14 @@ app/
 └── static/       # Frontend (index.html)
 ```
 
-Diseño stateless: el agente se construye por petición. El frontend propaga los insights activos como contexto en cada mensaje.
-
----
-
-## Requisitos previos
-
-- Python 3.12+
-- Clave de API de OpenAI
+Diseño stateless: el agente se construye por petición. El frontend propaga los insights activos como contexto en cada mensaje. Ver [arquitectura detallada](docs/ARCHITECTURE.md).
 
 ---
 
 ## Puesta en marcha
 
 ```bash
-# 1. Clonar y crear entorno virtual
+# 1. Crear entorno virtual
 python -m venv venv
 source venv/bin/activate
 
@@ -75,13 +73,3 @@ Abrir [http://localhost:8000](http://localhost:8000) en el navegador.
 | `LANGFUSE_SECRET_KEY` | No | Observabilidad con Langfuse |
 | `LANGFUSE_PUBLIC_KEY` | No | Observabilidad con Langfuse |
 | `LANGFUSE_HOST` | No | Host de Langfuse (default: cloud) |
-
----
-
-## Selección de modelos LLM
-
-Ver [LLM.md](LLM.md) para la justificación de modelos y temperaturas por módulo.
-
-## Pruebas
-
-Ver [UAT.md](UAT.md) para los casos de prueba de aceptación.
