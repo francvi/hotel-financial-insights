@@ -1,7 +1,6 @@
 pandas == 3.0.2
 python-dotenv == 1.2.2
 langchain == 1.2.15
-langchain-ollama == 1.1.0
 langchain-openai == 1.1.16
 tabulate == 0.10.0
 fastapi[standard] == 0.135.3

@@ -1,13 +1,14 @@
-import os
 import sqlite3
+from pathlib import Path
+
 import pandas as pd
-from dotenv import load_dotenv
 
-load_dotenv()
-DB_NAME = os.getenv("DB_NAME", "hotel_kpi.db")
+from db_config import DB_PATH
+from integration.db.load_db import ensure_loaded
 
-base_dir = os.getcwd()
-sqlite_db = os.path.join(base_dir, DB_NAME)
+ensure_loaded()
+
+sqlite_db = str(DB_PATH)
 
 
 class KpiService:

@@ -1,21 +1,11 @@
 from langchain.agents import create_agent
 from app.config import settings
-from app.integration.ollama import init_chat_llm
 from app.kpis import kpi_service
 
 from .system_prompt import SYSTEM_PROMPT as _BASE_SYSTEM_PROMPT
+from app.integration.openai import init_chat_llm
 
-llm = None
-
-if settings.CHATBOT_LLM_PROVIDER == "ollama":
-    from app.integration.ollama import init_chat_llm
-
-    llm = init_chat_llm(model="llama3.2:latest", temperature=0.1)
-
-if settings.CHATBOT_LLM_PROVIDER == "openai":
-    from app.integration.openai import init_chat_llm
-
-    llm = init_chat_llm(model="gpt-4.1", temperature=0.1)
+llm = init_chat_llm(model="gpt-5.4-mini", temperature=0.1)
 
 
 def build_agent(tools=None, system_prompt=None):
@@ -33,8 +23,20 @@ def build_agent(tools=None, system_prompt=None):
 
 
 def build_agent_with_context(insights: dict):
-    context_lines = "\n".join(
-        f"- {item['text_en']}: {item['value']}" for item in insights.get("insights", [])
+    from loguru import logger
+    from logging_config import divider, log_block
+
+    items = insights.get("insights", [])
+    context_lines = "\n".join(f"- {i['text_en']}: {i['value']}" for i in items)
+    system_prompt = f"{_BASE_SYSTEM_PROMPT}\n\n## Latest Insights:\n{context_lines}"
+
+    logger.info(
+        divider(
+            f"AGENT INITIALIZED  {len(system_prompt):,} chars | {len(items)} insight(s)"
+        )
     )
-    system_prompt = f"{_BASE_SYSTEM_PROMPT}\n\n## Live KPI Snapshot\n{context_lines}"
+    logger.debug(divider("SYSTEM PROMPT"))
+    log_block(system_prompt.splitlines(), level="DEBUG")
+    logger.debug(divider())
+
     return build_agent(system_prompt=system_prompt)

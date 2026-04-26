@@ -923,6 +923,7 @@
                   message,
                   history,
                   language: this.language,
+                  insights: this.insights.map(({ text_en, value }) => ({ text_en, value })),
                 }),
               });
 
@@ -1001,12 +1002,16 @@
 
               // Fetch follow-up suggestions from the completed response
               if (assistant.content) {
+                const recentMessages = this.messages
+                  .slice(-10)
+                  .map((m) => ({ role: m.role, content: m.content }));
                 fetch("/api/suggestions/followup", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     history,
                     last_response: assistant.content,
+                    messages: recentMessages,
                   }),
                 })
                   .then((r) => (r.ok ? r.json() : null))

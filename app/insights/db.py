@@ -1,9 +1,8 @@
 import sqlite3
-from pathlib import Path
 
 from insights.insights_generator import LLMInsightsResponse
 
-DB_PATH = Path(__file__).parent.parent.parent / "insights.db"
+from db_config import DB_PATH
 
 
 def init_db() -> None:

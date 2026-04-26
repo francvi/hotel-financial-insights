@@ -13,28 +13,21 @@ from fastapi.staticfiles import StaticFiles
 # Add app/ to sys.path so internal imports work
 sys.path.insert(0, str(Path(__file__).parent))
 
-import state  # noqa: E402
-from agent.agent import build_agent_with_context  # noqa: E402
+import logging_config  # noqa: F401, E402  — side-effect import: sets up loguru handlers
 from agent.router import router as agent_router  # noqa: E402
-from feedback.db import init_db as init_feedback_db  # noqa: E402
 from feedback.router import router as feedback_router  # noqa: E402
 from insights.router import router as insights_router  # noqa: E402
-from load_insights import load_insights  # noqa: E402
-from load_suggestions import load_suggestions  # noqa: E402
+from insights.service import load as load_insights  # noqa: E402
 from suggestions.router import router as suggestions_router  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_feedback_db()
-    state.insights = load_insights()
-    state.suggestions = load_suggestions()
-    state.agent = build_agent_with_context(state.insights)
+    load_insights()  # warm up: generate insights if DB is empty
     yield
 
 
 app = FastAPI(lifespan=lifespan)
-app.include_router(feedback_router)
 
 app.include_router(agent_router)
 app.include_router(insights_router)

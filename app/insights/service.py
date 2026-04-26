@@ -1,5 +1,4 @@
 import sqlite3
-
 from pydantic import ValidationError
 
 from insights.db import DB_PATH, clear_rows, init_db, read_from_db, write_to_db
@@ -7,9 +6,8 @@ from insights.insights_generator import LLMInsightsResponse, gen_insight
 from kpis.kpi_calculator import kpi_service
 
 
-def load_insights() -> dict:
+def load() -> dict:
     init_db()
-
     try:
         raw = read_from_db()
         if raw is not None:

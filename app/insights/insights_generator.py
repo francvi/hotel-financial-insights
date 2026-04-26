@@ -1,21 +1,12 @@
-from pydantic import BaseModel, Field
 from typing import List
-from app.config import settings
 
-from integration.langfuse import langfuse_handler, langfuse_client
+from pydantic import BaseModel, Field
+
+from integration.langfuse import langfuse_handler
+from integration.openai import init_chat_llm
 
 
-llm = None
-
-if settings.INSIGHTS_LLM_PROVIDER == "ollama":
-    from app.integration.ollama import init_chat_llm
-
-    llm = init_chat_llm(model="llama3.2:latest", temperature=0.1)
-
-if settings.INSIGHTS_LLM_PROVIDER == "openai":
-    from app.integration.openai import init_chat_llm
-
-    llm = init_chat_llm(model="gpt-4.1", temperature=0.1)
+llm = init_chat_llm(model="gpt-5.4-mini", temperature=0.1)
 
 
 class InsightItem(BaseModel):
@@ -43,7 +34,7 @@ structured_llm = llm.with_structured_output(LLMInsightsResponse)
 
 
 def gen_insight(kpi_results: str, portfolio_context: str) -> LLMInsightsResponse:
-    response = structured_llm.invoke(
+    return structured_llm.invoke(
         f"""You're an expert Financial Analyst working for a Hotel Group. You'll receive KPIs results and your task is to extract valuable insights from those. Focus on the top 3 with more impact on the business.
 
         Provide each insight in both English and Spanish.
@@ -64,5 +55,3 @@ def gen_insight(kpi_results: str, portfolio_context: str) -> LLMInsightsResponse
             "metadata": {"source": "insights_engine"},
         },
     )
-
-    return response

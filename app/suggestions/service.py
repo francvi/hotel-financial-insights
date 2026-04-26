@@ -1,11 +1,10 @@
-from suggestions.db import clear, init_db, read_from_db, write_to_db
+from suggestions.db import init_db, read_from_db, write_to_db
 from suggestions.generator import gen_suggestions
 from kpis.kpi_calculator import kpi_service
 
 
-def load_suggestions() -> dict:
+def load() -> dict:
     init_db()
-
     cached = read_from_db()
     if cached is not None:
         return cached

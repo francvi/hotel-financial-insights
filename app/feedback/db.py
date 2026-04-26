@@ -1,10 +1,9 @@
 import sqlite3
-from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent / "insights.db"
+from db_config import DB_PATH
 
 
-def init_db() -> None:
+def _init_db() -> None:
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         """
@@ -27,6 +26,9 @@ def init_db() -> None:
             pass
     conn.commit()
     conn.close()
+
+
+_init_db()
 
 
 def save_feedback(
