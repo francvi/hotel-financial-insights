@@ -15,7 +15,7 @@ class KpiService:
     METRIC_FORMULAS = {
         # 1. CONTROL DE COSTES Y EFICIENCIA OPERATIVA (OPEX & LABOR)
         "CPOR": lambda d: abs(d["ROOMS_OPEX"]) / d["RN"],
-        "CPH": lambda d: d["ROOMS_OPEX"] / d["HABITACIONES"],
+        "CPH": lambda d: abs(d["ROOMS_OPEX"]) / d["HABITACIONES"],
         "LBC": lambda d: d["ROOMS_PERSONNEL"] / d["ROOMS_REVENUE"],
         "LPC_TOTAL": lambda d: (d["ROOMS_PERSONNEL"] + d["FB_PERSONNEL"])
         / d["OPERATING_REVENUE"],
@@ -219,7 +219,8 @@ class KpiService:
             if isinstance(metrics, str): 
                 metrics = [metrics]
             if hotels:
-                self.df = self.df[self.df["HOTEL"].isin(hotels)]
+                hotels_upper = [h.upper() for h in hotels]
+                self.df = self.df[self.df["HOTEL"].str.upper().isin(hotels_upper)]
             if years:
                 self.df = self.df[self.df["ANIO"].isin(years)]
             if self.df.empty:
