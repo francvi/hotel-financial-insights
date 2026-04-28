@@ -14,7 +14,7 @@ sqlite_db = str(DB_PATH)
 class KpiService:
     METRIC_FORMULAS = {
         # 1. CONTROL DE COSTES Y EFICIENCIA OPERATIVA (OPEX & LABOR)
-        "CPOR": lambda d: d["ROOMS_OPEX"] / d["RN"],
+        "CPOR": lambda d: abs(d["ROOMS_OPEX"]) / d["RN"],
         "CPH": lambda d: d["ROOMS_OPEX"] / d["HABITACIONES"],
         "LBC": lambda d: d["ROOMS_PERSONNEL"] / d["ROOMS_REVENUE"],
         "LPC_TOTAL": lambda d: (d["ROOMS_PERSONNEL"] + d["FB_PERSONNEL"])
@@ -61,6 +61,8 @@ class KpiService:
         "FB_PERSONNEL": lambda d: d["FB_PERSONNEL"],
         "FB_PROFIT": lambda d: d["FB_PROFIT"],
         "UNDISTRIB_OPEX": lambda d: d["UNDISTRIB_OPEX"],
+        "RN": lambda d: d["RN"],
+        "HABITACIONES": lambda d:d["HABITACIONES"]
     }
 
     DEPARTMENTAL_METRICS = [
@@ -68,7 +70,7 @@ class KpiService:
         "ROOMS_REVENUE", "ROOMS_OPEX", "ROOMS_PERSONNEL", "ROOMS_PROFIT", "ROOMS_PROFIT_MARGIN",
         "FB_REVENUE", "FB_OPEX", "FB_PERSONNEL", "FB_PROFIT", "F&B_GOP_MARGIN",
         "UNDISTRIB_OPEX", "UNDISTRIB_OPEX_Pct",
-        "GOP", "GOP_MARGIN",
+        "GOP", "GOP_MARGIN","RN","HABITACIONES"
     ]
 
     DEPARTMENTAL_CATEGORIES = {
@@ -76,6 +78,7 @@ class KpiService:
         "Rooms": ["ROOMS_OPEX", "ROOMS_PERSONNEL", "ROOMS_PROFIT", "ROOMS_PROFIT_MARGIN"],
         "F&B": ["FB_OPEX", "FB_PERSONNEL", "FB_PROFIT", "F&B_GOP_MARGIN"],
         "Undistributed & GOP": ["UNDISTRIB_OPEX", "UNDISTRIB_OPEX_Pct", "GOP", "GOP_MARGIN"],
+        "General" : ["RN", "HABITACIONES"]
     }
 
     # Column bases that represent ratios/percentages (0–1 scale in DB)
@@ -155,6 +158,7 @@ class KpiService:
                     return f"{val * 100:.1f}%" if not is_var else f"{val:+.2f}pp"
                 if base in KpiService.MILLIONS_BASES:
                     return f"${val / 1_000_000:.2f}M"
+                
                 break
         return f"${val:.2f}"
 
@@ -182,19 +186,85 @@ class KpiService:
         return "\n\n".join(sections)
 
     def overall_kpis_annual(self) -> str:
-        """Retrieves all KPIs aggregated across all hotels, grouped by year (REAL vs BUDGET)."""
+        """[GLOBAL PORTFOLIO] Retrieves consolidated KPIs aggregated across the entire hotel chain, grouped ONLY by year (REAL vs BUDGET). DOES NOT breakdown by individual hotel."""
         all_kpis = [kpi for cat in self.categories.values() for kpi in cat]
         df = self._agg_real_budget(["ANIO"], all_kpis)
         return "## Annual KPIs — All Hotels Combined\n\n" + self._df_to_markdown(df, ["ANIO"], self.categories)
 
     def kpis_by_hotel_annual(self) -> str:
-        """Retrieves all KPIs broken down by hotel and year (REAL vs BUDGET)."""
+        """[INDIVIDUAL LEVEL] Retrieves KPIs broken down specifically BY EACH HOTEL and by year (REAL vs BUDGET). Useful for analyzing individual property performance."""
         all_kpis = [kpi for cat in self.categories.values() for kpi in cat]
         df = self._agg_real_budget(["HOTEL", "ANIO"], all_kpis)
         return "## Annual KPIs by Hotel\n\n" + self._df_to_markdown(df, ["HOTEL", "ANIO"], self.categories)
+    
+    def kpis_by_hotel_period(self,
+                              hotels: list[str] | str | None = None, 
+                              years: list[int] | int | None = None, 
+                              category: str | None = None,
+                              metrics: list[str] | str | None = None) -> str:
+        """
+        [INDIVIDUAL LEVEL] Retrieves monthly KPIs by hotel.
+        Args:
+            hotels: Name or list of hotel names.
+            years: Year or list of years.
+            category: 'Opex_Labor', 'Food_Beverage', 'Revenue_Management', 'Profitability', 'Revenue', 'Rooms', 'F&B', 'Undistributed & GOP', 'General'.
+            metrics: Specific list of metrics (e.g., ['OCC', 'ADR', 'GOP']). Use this if specific KPIs are requested.
+        """
+        df_original = self.df
+        try:
+            if isinstance(hotels, str):
+                hotels = [hotels]
+            if isinstance(years, int):
+                years = [years]
+            if isinstance(metrics, str): 
+                metrics = [metrics]
+            if hotels:
+                self.df = self.df[self.df["HOTEL"].isin(hotels)]
+            if years:
+                self.df = self.df[self.df["ANIO"].isin(years)]
+            if self.df.empty:
+                return "No data found for the requested hotels/years."
+
+            #Select Category of metric
+            target_metrics = self.DEPARTMENTAL_METRICS
+            target_categories = self.DEPARTMENTAL_CATEGORIES
+            scope_name = "Departmental Summary"
+         
+            if metrics:
+                #Filter specific metrics
+                target_metrics = [m for m in metrics if m in self.METRIC_FORMULAS]
+                if target_metrics:
+                    target_categories = {"Custom Metrics": target_metrics}
+                    scope_name = "Custom Selection"
+
+            elif category:
+                if category in self.categories:
+                    target_metrics = self.categories[category]
+                    target_categories = {category: target_metrics}
+                    scope_name = category
+                elif category in self.DEPARTMENTAL_CATEGORIES:
+                    target_metrics = self.DEPARTMENTAL_CATEGORIES[category]
+                    target_categories = {category: target_metrics}
+                    scope_name = category
+                elif category in self.METRIC_FORMULAS:
+                    target_metrics = [category]
+                    target_categories = {"Custom Metrics": target_metrics}
+                    scope_name = category
+
+            if not target_metrics:
+                 return "Error: No valid metrics found to calculate."
+
+            df = self._agg_real_budget(["HOTEL", "ANIO", "MES"], target_metrics)
+            title_scope = ", ".join(hotels) if hotels else "All Hotels"
+            
+            return f"## Historical Monthly KPIs: {title_scope} - {scope_name}\n\n" + \
+                   self._df_to_markdown(df, ["HOTEL", "ANIO", "MES"], target_categories)
+                   
+        finally:
+            self.df = df_original
 
     def kpis_monthly(self, year: int = 2025) -> str:
-        """Retrieves all KPIs broken down by month for the given year (REAL vs BUDGET)."""
+        """[GLOBAL PORTFOLIO] Retrieves consolidated KPIs for the entire chain, grouped ONLY by month for a specific year (REAL vs BUDGET). DOES NOT breakdown by individual hotel."""
         df_original = self.df
         try:
             self.df = self.df[self.df["ANIO"] == year].copy()
@@ -207,7 +277,7 @@ class KpiService:
             self.df = df_original
 
     def departmental_kpis_annual(self, year: int | None = None) -> str:
-        """Retrieves Rooms, F&B, and Undistributed departmental revenue/opex/personnel/profit breakdown by year (REAL vs BUDGET). Optionally filter to a specific year."""
+        """[GLOBAL PORTFOLIO] Retrieves Rooms, F&B, and Undistributed departmental revenue/opex/personnel/profit breakdown by year (REAL vs BUDGET). Optionally filter to a specific year."""
         df_original = self.df
         try:
             if year is not None:
@@ -282,7 +352,7 @@ class KpiService:
 
     def get_portafolio_context(self) -> str:
         """Retrieves the hotel portfolio details"""
-        context_cols = ["HOTEL", "CONTINENTE", "PAIS", "CATEGORIA", "TOTAL_HABITACIONES"]
+        context_cols = ["HOTEL", "CONTINENTE", "PAIS", "CATEGORIA", "TOTAL_HABITACIONES","MESES_OPEN","PERIOD_CLOSE"]
         df_context = self.df[context_cols].drop_duplicates().sort_values("HOTEL")
         md = "## Perfil del Portafolio de Activos\n"
         md += "Este portafolio incluye los hoteles con sus características geográficas y de categoría:\n\n"

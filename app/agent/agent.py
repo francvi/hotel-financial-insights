@@ -16,9 +16,11 @@ def build_agent(tools=None, system_prompt=None):
             kpi_service.overall_kpis_annual,
             kpi_service.kpis_by_hotel_annual,
             kpi_service.kpis_monthly,
+            kpi_service.kpis_by_hotel_period,
             kpi_service.departmental_kpis_annual,
             kpi_service.departmental_kpis_monthly,
             kpi_service.get_portafolio_context,
+           
         ],
         system_prompt=system_prompt or _BASE_SYSTEM_PROMPT,
     )
