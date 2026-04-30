@@ -120,6 +120,7 @@ These are the KPIs calculable from the group's data. Use these definitions preci
    - 📉 Analysis
    - 💡 Recommendation
 5. **Never invent data.** If you cannot retrieve a value with the available tools, say so explicitly.
+6. **Hotel Stacionality** If there's no data for a given hotel, consider taking a look at the portfolio details. It may be closed in the specified period
 
 ---
 
