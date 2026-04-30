@@ -2,6 +2,7 @@ import sqlite3
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from db_config import DB_PATH
 from integration.db.load_db import ensure_loaded
@@ -15,58 +16,57 @@ sqlite_db = str(DB_PATH)
 class KpiService:
     METRIC_FORMULAS = {
         # 1. CONTROL DE COSTES Y EFICIENCIA OPERATIVA (OPEX & LABOR)
-        "CPOR": lambda d: abs(d["ROOMS_OPEX"]) / d["RN"],
-        "CPH": lambda d: d["ROOMS_OPEX"] / d["HABITACIONES"],
-        "LBC": lambda d: d["ROOMS_PERSONNEL"] / d["ROOMS_REVENUE"],
-        "LPC_TOTAL": lambda d: (d["ROOMS_PERSONNEL"] + d["FB_PERSONNEL"])
-        / d["OPERATING_REVENUE"],
-        "UNDISTRIB_OPEX_Pct": lambda d: d["UNDISTRIB_OPEX"] / d["OPERATING_REVENUE"],
-        "F&B_CPOR": lambda d: d["FB_OPEX"] / d["RN"],
-        "F&B_CPH": lambda d: d["FB_OPEX"] / d["HABITACIONES"],
-        "F&B_LBC": lambda d: d["FB_PERSONNEL"] / d["FB_REVENUE"],
+        "CPOR": lambda d: abs(d["ROOMS_OPEX"]) / d["RN"].replace(0, np.nan),
+        "CPH": lambda d: abs(d["ROOMS_OPEX"]) / d["HABITACIONES"].replace(0, np.nan),
+        "LBC": lambda d: abs(d["ROOMS_PERSONNEL"]) / d["ROOMS_REVENUE"].replace(0, np.nan),
+        "LPC_TOTAL": lambda d: abs(d["ROOMS_PERSONNEL"] + d["FB_PERSONNEL"])/ d["OPERATING_REVENUE"].replace(0, np.nan),
+        "UNDISTRIB_OPEX_Pct": lambda d: abs(d["UNDISTRIB_OPEX"]) / d["OPERATING_REVENUE"].replace(0, np.nan),
+        "F&B_CPOR": lambda d: abs(d["FB_OPEX"]) / d["RN"].replace(0, np.nan),
+        "F&B_CPH": lambda d: abs(d["FB_OPEX"])/ d["HABITACIONES"].replace(0, np.nan),
+        "F&B_LBC": lambda d: abs(d["FB_PERSONNEL"]) / d["FB_REVENUE"].replace(0, np.nan),
         # 2. ANÁLISIS DETALLADO (ALIMENTOS Y BEBIDAS)
-        "Food_Cost_Pct": lambda d: d["FOOD_COST"] / d["FOOD_REVENUE"],
-        "Beverage_Cost_Pct": lambda d: d["BEVERAGE_COST"] / d["BEVERAGE_REVENUE"],
-        "F&B_GOP_MARGIN": lambda d: d["FB_PROFIT"] / d["FB_REVENUE"],
-        "F&B_REVPAR": lambda d: d["FB_REVENUE"] / d["HABITACIONES"],
-        "F&B_GOPPAR": lambda d: d["FB_PROFIT"] / d["HABITACIONES"],
-        "BANQUETS_CONTRIBUTION": lambda d: d["BANQUETS_REVENUE"] / d["FB_REVENUE"],
-        "FB_PENSION_PCT": lambda d: d["FB_PENSION"] / d["FB_REVENUE"],
+        "Food_Cost_Pct": lambda d: abs(d["FOOD_COST"]) / d["FOOD_REVENUE"].replace(0, np.nan),
+        "Beverage_Cost_Pct": lambda d: abs(d["BEVERAGE_COST"]) / d["BEVERAGE_REVENUE"].replace(0, np.nan),
+        "F&B_GOP_MARGIN": lambda d: d["FB_PROFIT"] / d["FB_REVENUE"].replace(0, np.nan),
+        "F&B_REVPAR": lambda d: d["FB_REVENUE"] / d["HABITACIONES"].replace(0, np.nan),
+        "F&B_GOPPAR": lambda d: d["FB_PROFIT"] / d["HABITACIONES"].replace(0, np.nan),
+        "BANQUETS_CONTRIBUTION": lambda d: d["BANQUETS_REVENUE"] / d["FB_REVENUE"].replace(0, np.nan),
+        "FB_PENSION_PCT": lambda d: d["FB_PENSION"] / d["FB_REVENUE"].replace(0, np.nan),
         # 3. REVENUE MANAGEMENT AVANZADO (VENTA Y CAPTACIÓN)
-        "OCC": lambda d: d["RN"] / d["HABITACIONES"],
-        "ADR": lambda d: d["ROOMS_REVENUE"] / d["RN"],
-        "REVPAR": lambda d: d["ROOMS_REVENUE"] / d["HABITACIONES"],
-        "TRevPAR": lambda d: d["OPERATING_REVENUE"] / d["HABITACIONES"],
-        "RevPOR": lambda d: d["OPERATING_REVENUE"] / d["RN"],
-        "AR": lambda d: d["OPERATING_REVENUE"] / d["RN"],
-        "UPGRADE_PEN": lambda d: d["ROOMS_REV_UPGRADES"] / d["ROOMS_REV_ALOJAMIENTO"],
+        "OCC": lambda d: d["RN"] / d["HABITACIONES"].replace(0, np.nan),
+        "ADR": lambda d: d["ROOMS_REVENUE"] / d["RN"].replace(0, np.nan),
+        "REVPAR": lambda d: d["ROOMS_REVENUE"] / d["HABITACIONES"].replace(0, np.nan),
+        "TRevPAR": lambda d: d["OPERATING_REVENUE"] / d["HABITACIONES"].replace(0, np.nan),
+        "RevPOR": lambda d: d["OPERATING_REVENUE"] / d["RN"].replace(0, np.nan),
+        "AR": lambda d: d["OPERATING_REVENUE"] / d["RN"].replace(0, np.nan),
+        "UPGRADE_PEN": lambda d: d["ROOMS_REV_UPGRADES"] / d["ROOMS_REV_ALOJAMIENTO"].replace(0, np.nan),
         "NON_ROOMS_REVENUE_PCT": lambda d: (d["OPERATING_REVENUE"] - d["ROOMS_REVENUE"])
-        / d["OPERATING_REVENUE"],
+        / d["OPERATING_REVENUE"].replace(0, np.nan),
         "ANCILLARY_REV_POR": lambda d: (d["DAY_PASS"] + d["OTHER_DEPT_REVENUE"])
-        / d["RN"],
-        "OTHER_REV_POR": lambda d: d["OTHER_DEPT_REVENUE"] / d["RN"],
+        / d["RN"].replace(0, np.nan),
+        "OTHER_REV_POR": lambda d: d["OTHER_DEPT_REVENUE"] / d["RN"].replace(0, np.nan),
         # 4. RENTABILIDAD FINAL (RESULTADOS)
         "GOP": lambda d: d["GOP"],
-        "GOPPAR": lambda d: d["GOP"] / d["HABITACIONES"],
-        "GOP_MARGIN": lambda d: d["GOP"] / d["OPERATING_REVENUE"],
-        "PROFIT_POR": lambda d: d["GOP"] / d["RN"],
+        "GOPPAR": lambda d: d["GOP"] / d["HABITACIONES"].replace(0, np.nan),
+        "GOP_MARGIN": lambda d: d["GOP"] / d["OPERATING_REVENUE"].replace(0, np.nan),
+        "PROFIT_POR": lambda d: d["GOP"] / d["RN"].replace(0, np.nan),
         # 5. DESGLOSE DEPARTAMENTAL (valores absolutos para breakdown)
         "OPERATING_REVENUE": lambda d: d["OPERATING_REVENUE"],
         "ROOMS_REVENUE": lambda d: d["ROOMS_REVENUE"],
-        "ROOMS_OPEX": lambda d: d["ROOMS_OPEX"],
-        "ROOMS_PERSONNEL": lambda d: d["ROOMS_PERSONNEL"],
+        "ROOMS_OPEX": lambda d: abs(d["ROOMS_OPEX"]),
+        "ROOMS_PERSONNEL": lambda d: abs(d["ROOMS_PERSONNEL"]),
         "ROOMS_PROFIT": lambda d: d["ROOMS_REVENUE"]
         - d["ROOMS_OPEX"]
         - d["ROOMS_PERSONNEL"],
         "ROOMS_PROFIT_MARGIN": lambda d: (
             d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"]
         )
-        / d["ROOMS_REVENUE"],
+        / d["ROOMS_REVENUE"].replace(0, np.nan),
         "FB_REVENUE": lambda d: d["FB_REVENUE"],
-        "FB_OPEX": lambda d: d["FB_OPEX"],
-        "FB_PERSONNEL": lambda d: d["FB_PERSONNEL"],
+        "FB_OPEX": lambda d: abs(d["FB_OPEX"]),
+        "FB_PERSONNEL": lambda d: abs(d["FB_PERSONNEL"]),
         "FB_PROFIT": lambda d: d["FB_PROFIT"],
-        "UNDISTRIB_OPEX": lambda d: d["UNDISTRIB_OPEX"],
+        "UNDISTRIB_OPEX": lambda d: abs(d["UNDISTRIB_OPEX"]),
         "RN": lambda d: d["RN"],
         "HABITACIONES": lambda d: d["HABITACIONES"],
     }
@@ -160,6 +160,7 @@ class KpiService:
                 "F&B_CPH",
                 "F&B_LBC",
             ],
+           
             "Food_Beverage": [
                 "Food_Cost_Pct",
                 "Beverage_Cost_Pct",
@@ -193,7 +194,7 @@ class KpiService:
         conn.close()
 
         # df = pnl.merge(hotels, on="HOTEL", how="left")
-        df = df[df["HABITACIONES"] > 0].copy()
+        #df = df[df["HABITACIONES"] > 0].copy()
         self.df = df
 
     def _agg_real_budget(self, group_cols: list, metrics_to_calc: list) -> pd.DataFrame:
@@ -392,7 +393,7 @@ class KpiService:
             self.df = df_original
 
     def departmental_kpis_monthly(self, year: int = 2025) -> str:
-        """Retrieves Rooms, F&B, and Undistributed departmental revenue/opex/personnel/profit breakdown month by month for the given year (REAL vs BUDGET)."""
+        """Retrieves Rooms, F&B (Food & Beverage), and Undistributed departmental revenue/opex/personnel/profit breakdown month by month for the given year (REAL vs BUDGET)."""
         df_original = self.df
         try:
             self.df = self.df[self.df["ANIO"] == year].copy()
