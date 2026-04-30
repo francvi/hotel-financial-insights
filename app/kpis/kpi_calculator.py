@@ -5,6 +5,7 @@ import pandas as pd
 
 from db_config import DB_PATH
 from integration.db.load_db import ensure_loaded
+from preprocessing.cleaner import DataCleaner
 
 ensure_loaded()
 
@@ -16,16 +17,15 @@ class KpiService:
         # 1. CONTROL DE COSTES Y EFICIENCIA OPERATIVA (OPEX & LABOR)
         "CPOR": lambda d: abs(d["ROOMS_OPEX"]) / d["RN"],
         "CPH": lambda d: abs(d["ROOMS_OPEX"]) / d["HABITACIONES"],
-        "LBC": lambda d: d["ROOMS_PERSONNEL"] / d["ROOMS_REVENUE"],
-        "LPC_TOTAL": lambda d: (d["ROOMS_PERSONNEL"] + d["FB_PERSONNEL"])
-        / d["OPERATING_REVENUE"],
-        "UNDISTRIB_OPEX_Pct": lambda d: d["UNDISTRIB_OPEX"] / d["OPERATING_REVENUE"],
-        "F&B_CPOR": lambda d: d["FB_OPEX"] / d["RN"],
-        "F&B_CPH": lambda d: d["FB_OPEX"] / d["HABITACIONES"],
-        "F&B_LBC": lambda d: d["FB_PERSONNEL"] / d["FB_REVENUE"],
+        "LBC": lambda d: abs(d["ROOMS_PERSONNEL"]) / d["ROOMS_REVENUE"],
+        "LPC_TOTAL": lambda d: abs(d["ROOMS_PERSONNEL"] + d["FB_PERSONNEL"])/ d["OPERATING_REVENUE"],
+        "UNDISTRIB_OPEX_Pct": lambda d: abs(d["UNDISTRIB_OPEX"]) / d["OPERATING_REVENUE"],
+        "F&B_CPOR": lambda d: abs(d["FB_OPEX"]) / d["RN"],
+        "F&B_CPH": lambda d: abs(d["FB_OPEX"])/ d["HABITACIONES"],
+        "F&B_LBC": lambda d: abs(d["FB_PERSONNEL"]) / d["FB_REVENUE"],
         # 2. ANÁLISIS DETALLADO (ALIMENTOS Y BEBIDAS)
-        "Food_Cost_Pct": lambda d: d["FOOD_COST"] / d["FOOD_REVENUE"],
-        "Beverage_Cost_Pct": lambda d: d["BEVERAGE_COST"] / d["BEVERAGE_REVENUE"],
+        "Food_Cost_Pct": lambda d: abs(d["FOOD_COST"]) / d["FOOD_REVENUE"],
+        "Beverage_Cost_Pct": lambda d: abs(d["BEVERAGE_COST"]) / d["BEVERAGE_REVENUE"],
         "F&B_GOP_MARGIN": lambda d: d["FB_PROFIT"] / d["FB_REVENUE"],
         "F&B_REVPAR": lambda d: d["FB_REVENUE"] / d["HABITACIONES"],
         "F&B_GOPPAR": lambda d: d["FB_PROFIT"] / d["HABITACIONES"],
@@ -52,65 +52,134 @@ class KpiService:
         # 5. DESGLOSE DEPARTAMENTAL (valores absolutos para breakdown)
         "OPERATING_REVENUE": lambda d: d["OPERATING_REVENUE"],
         "ROOMS_REVENUE": lambda d: d["ROOMS_REVENUE"],
-        "ROOMS_OPEX": lambda d: d["ROOMS_OPEX"],
-        "ROOMS_PERSONNEL": lambda d: d["ROOMS_PERSONNEL"],
-        "ROOMS_PROFIT": lambda d: d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"],
-        "ROOMS_PROFIT_MARGIN": lambda d: (d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"]) / d["ROOMS_REVENUE"],
+        "ROOMS_OPEX": lambda d: abs(d["ROOMS_OPEX"]),
+        "ROOMS_PERSONNEL": lambda d: abs(d["ROOMS_PERSONNEL"]),
+        "ROOMS_PROFIT": lambda d: d["ROOMS_REVENUE"]
+        - d["ROOMS_OPEX"]
+        - d["ROOMS_PERSONNEL"],
+        "ROOMS_PROFIT_MARGIN": lambda d: (
+            d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"]
+        )
+        / d["ROOMS_REVENUE"],
         "FB_REVENUE": lambda d: d["FB_REVENUE"],
-        "FB_OPEX": lambda d: d["FB_OPEX"],
-        "FB_PERSONNEL": lambda d: d["FB_PERSONNEL"],
+        "FB_OPEX": lambda d: abs(d["FB_OPEX"]),
+        "FB_PERSONNEL": lambda d: abs(d["FB_PERSONNEL"]),
         "FB_PROFIT": lambda d: d["FB_PROFIT"],
-        "UNDISTRIB_OPEX": lambda d: d["UNDISTRIB_OPEX"],
+        "UNDISTRIB_OPEX": lambda d: abs(d["UNDISTRIB_OPEX"]),
         "RN": lambda d: d["RN"],
-        "HABITACIONES": lambda d:d["HABITACIONES"]
+        "HABITACIONES": lambda d: d["HABITACIONES"],
     }
 
     DEPARTMENTAL_METRICS = [
         "OPERATING_REVENUE",
-        "ROOMS_REVENUE", "ROOMS_OPEX", "ROOMS_PERSONNEL", "ROOMS_PROFIT", "ROOMS_PROFIT_MARGIN",
-        "FB_REVENUE", "FB_OPEX", "FB_PERSONNEL", "FB_PROFIT", "F&B_GOP_MARGIN",
-        "UNDISTRIB_OPEX", "UNDISTRIB_OPEX_Pct",
-        "GOP", "GOP_MARGIN","RN","HABITACIONES"
+        "ROOMS_REVENUE",
+        "ROOMS_OPEX",
+        "ROOMS_PERSONNEL",
+        "ROOMS_PROFIT",
+        "ROOMS_PROFIT_MARGIN",
+        "FB_REVENUE",
+        "FB_OPEX",
+        "FB_PERSONNEL",
+        "FB_PROFIT",
+        "F&B_GOP_MARGIN",
+        "UNDISTRIB_OPEX",
+        "UNDISTRIB_OPEX_Pct",
+        "GOP",
+        "GOP_MARGIN",
+        "RN",
+        "HABITACIONES",
     ]
 
     DEPARTMENTAL_CATEGORIES = {
         "Revenue": ["OPERATING_REVENUE", "ROOMS_REVENUE", "FB_REVENUE"],
-        "Rooms": ["ROOMS_OPEX", "ROOMS_PERSONNEL", "ROOMS_PROFIT", "ROOMS_PROFIT_MARGIN"],
+        "Rooms": [
+            "ROOMS_OPEX",
+            "ROOMS_PERSONNEL",
+            "ROOMS_PROFIT",
+            "ROOMS_PROFIT_MARGIN",
+        ],
         "F&B": ["FB_OPEX", "FB_PERSONNEL", "FB_PROFIT", "F&B_GOP_MARGIN"],
-        "Undistributed & GOP": ["UNDISTRIB_OPEX", "UNDISTRIB_OPEX_Pct", "GOP", "GOP_MARGIN"],
-        "General" : ["RN", "HABITACIONES"]
+        "Undistributed & GOP": [
+            "UNDISTRIB_OPEX",
+            "UNDISTRIB_OPEX_Pct",
+            "GOP",
+            "GOP_MARGIN",
+        ],
+        "General": ["RN", "HABITACIONES"],
     }
 
     # Column bases that represent ratios/percentages (0–1 scale in DB)
-    PCT_BASES = frozenset({
-        "OCC", "LBC", "F&B_LBC", "LPC_TOTAL", "UNDISTRIB_OPEX_PCT",
-        "FOOD_COST_PCT", "BEVERAGE_COST_PCT", "F&B_GOP_MARGIN", "GOP_MARGIN",
-        "NON_ROOMS_REVENUE_PCT", "UPGRADE_PEN", "BANQUETS_CONTRIBUTION",
-        "FB_PENSION_PCT", "ROOMS_PROFIT_MARGIN",
-    })
+    PCT_BASES = frozenset(
+        {
+            "OCC",
+            "LBC",
+            "F&B_LBC",
+            "LPC_TOTAL",
+            "UNDISTRIB_OPEX_PCT",
+            "FOOD_COST_PCT",
+            "BEVERAGE_COST_PCT",
+            "F&B_GOP_MARGIN",
+            "GOP_MARGIN",
+            "NON_ROOMS_REVENUE_PCT",
+            "UPGRADE_PEN",
+            "BANQUETS_CONTRIBUTION",
+            "FB_PENSION_PCT",
+            "ROOMS_PROFIT_MARGIN",
+        }
+    )
 
     # Column bases that represent large monetary amounts (shown in millions)
-    MILLIONS_BASES = frozenset({
-        "GOP", "OPERATING_REVENUE", "ROOMS_REVENUE", "FB_REVENUE",
-        "ROOMS_PROFIT", "FB_PROFIT", "ROOMS_OPEX", "ROOMS_PERSONNEL",
-        "FB_OPEX", "FB_PERSONNEL", "UNDISTRIB_OPEX",
-    })
+    MILLIONS_BASES = frozenset(
+        {
+            "GOP",
+            "OPERATING_REVENUE",
+            "ROOMS_REVENUE",
+            "FB_REVENUE",
+            "ROOMS_PROFIT",
+            "FB_PROFIT",
+            "ROOMS_OPEX",
+            "ROOMS_PERSONNEL",
+            "FB_OPEX",
+            "FB_PERSONNEL",
+            "UNDISTRIB_OPEX",
+        }
+    )
 
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.df = None
         self.categories = {
             "Opex_Labor": [
-                "CPOR", "CPH", "LBC", "LPC_TOTAL", "UNDISTRIB_OPEX_Pct",
-                "F&B_CPOR", "F&B_CPH", "F&B_LBC",
+                "CPOR",
+                "CPH",
+                "LBC",
+                "LPC_TOTAL",
+                "UNDISTRIB_OPEX_Pct",
+                "F&B_CPOR",
+                "F&B_CPH",
+                "F&B_LBC",
             ],
+           
             "Food_Beverage": [
-                "Food_Cost_Pct", "Beverage_Cost_Pct", "F&B_GOP_MARGIN",
-                "F&B_REVPAR", "F&B_GOPPAR", "BANQUETS_CONTRIBUTION", "FB_PENSION_PCT",
+                "Food_Cost_Pct",
+                "Beverage_Cost_Pct",
+                "F&B_GOP_MARGIN",
+                "F&B_REVPAR",
+                "F&B_GOPPAR",
+                "BANQUETS_CONTRIBUTION",
+                "FB_PENSION_PCT",
             ],
             "Revenue_Management": [
-                "OCC", "ADR", "REVPAR", "TRevPAR", "RevPOR", "AR",
-                "UPGRADE_PEN", "NON_ROOMS_REVENUE_PCT", "ANCILLARY_REV_POR", "OTHER_REV_POR",
+                "OCC",
+                "ADR",
+                "REVPAR",
+                "TRevPAR",
+                "RevPOR",
+                "AR",
+                "UPGRADE_PEN",
+                "NON_ROOMS_REVENUE_PCT",
+                "ANCILLARY_REV_POR",
+                "OTHER_REV_POR",
             ],
             "Profitability": ["GOP", "GOPPAR", "GOP_MARGIN", "PROFIT_POR"],
         }
@@ -118,21 +187,39 @@ class KpiService:
 
     def _load_data(self):
         conn = sqlite3.connect(self.db_path)
-        pnl = pd.read_sql_query("SELECT * FROM pnl", conn)
-        hotels = pd.read_sql_query("SELECT * FROM hotels", conn)
+        pnl_raw = pd.read_sql_query("SELECT * FROM pnl", conn)
+        hotels_raw = pd.read_sql_query("SELECT * FROM hotels", conn)
+        df = DataCleaner.clean(pnl_raw, hotels_raw)
         conn.close()
 
-        df = pnl.merge(hotels, on="HOTEL", how="left")
+        # df = pnl.merge(hotels, on="HOTEL", how="left")
         df = df[df["HABITACIONES"] > 0].copy()
         self.df = df
 
     def _agg_real_budget(self, group_cols: list, metrics_to_calc: list) -> pd.DataFrame:
         base_cols = [
-            "RN", "HABITACIONES", "ROOMS_REVENUE", "OPERATING_REVENUE", "GOP",
-            "FB_REVENUE", "FB_PROFIT", "FOOD_COST", "FOOD_REVENUE", "BEVERAGE_COST",
-            "BEVERAGE_REVENUE", "ROOMS_OPEX", "ROOMS_PERSONNEL", "FB_OPEX", "FB_PERSONNEL",
-            "BANQUETS_REVENUE", "FB_PENSION", "UNDISTRIB_OPEX", "ROOMS_REV_UPGRADES",
-            "ROOMS_REV_ALOJAMIENTO", "DAY_PASS", "OTHER_DEPT_REVENUE",
+            "RN",
+            "HABITACIONES",
+            "ROOMS_REVENUE",
+            "OPERATING_REVENUE",
+            "GOP",
+            "FB_REVENUE",
+            "FB_PROFIT",
+            "FOOD_COST",
+            "FOOD_REVENUE",
+            "BEVERAGE_COST",
+            "BEVERAGE_REVENUE",
+            "ROOMS_OPEX",
+            "ROOMS_PERSONNEL",
+            "FB_OPEX",
+            "FB_PERSONNEL",
+            "BANQUETS_REVENUE",
+            "FB_PENSION",
+            "UNDISTRIB_OPEX",
+            "ROOMS_REV_UPGRADES",
+            "ROOMS_REV_ALOJAMIENTO",
+            "DAY_PASS",
+            "OTHER_DEPT_REVENUE",
         ]
         agg = self.df.groupby(group_cols + ["ESCENARIO"])[base_cols].sum().unstack()
         res = pd.DataFrame(index=agg.index)
@@ -158,7 +245,7 @@ class KpiService:
                     return f"{val * 100:.1f}%" if not is_var else f"{val:+.2f}pp"
                 if base in KpiService.MILLIONS_BASES:
                     return f"${val / 1_000_000:.2f}M"
-                
+
                 break
         return f"${val:.2f}"
 
@@ -177,9 +264,13 @@ class KpiService:
                     row[col] = int(r[col]) if col in ("ANIO", "MES") else r[col]
                 for m in metrics:
                     if f"{m}_REAL" in r.index:
-                        row[f"{m} Real"] = self._auto_format(r[f"{m}_REAL"], f"{m}_REAL")
-                        row[f"{m} Bdg"]  = self._auto_format(r[f"{m}_BUDGET"], f"{m}_BUDGET")
-                        row[f"{m} Var"]  = self._auto_format(r[f"{m}_VAR"], f"{m}_VAR")
+                        row[f"{m} Real"] = self._auto_format(
+                            r[f"{m}_REAL"], f"{m}_REAL"
+                        )
+                        row[f"{m} Bdg"] = self._auto_format(
+                            r[f"{m}_BUDGET"], f"{m}_BUDGET"
+                        )
+                        row[f"{m} Var"] = self._auto_format(r[f"{m}_VAR"], f"{m}_VAR")
                 rows.append(row)
             table = pd.DataFrame(rows).to_markdown(index=False)
             sections.append(f"### {cat_name.replace('_', ' ')}\n{table}")
@@ -189,19 +280,25 @@ class KpiService:
         """[GLOBAL PORTFOLIO] Retrieves consolidated KPIs aggregated across the entire hotel chain, grouped ONLY by year (REAL vs BUDGET). DOES NOT breakdown by individual hotel."""
         all_kpis = [kpi for cat in self.categories.values() for kpi in cat]
         df = self._agg_real_budget(["ANIO"], all_kpis)
-        return "## Annual KPIs — All Hotels Combined\n\n" + self._df_to_markdown(df, ["ANIO"], self.categories)
+        return "## Annual KPIs — All Hotels Combined\n\n" + self._df_to_markdown(
+            df, ["ANIO"], self.categories
+        )
 
     def kpis_by_hotel_annual(self) -> str:
         """[INDIVIDUAL LEVEL] Retrieves KPIs broken down specifically BY EACH HOTEL and by year (REAL vs BUDGET). Useful for analyzing individual property performance."""
         all_kpis = [kpi for cat in self.categories.values() for kpi in cat]
         df = self._agg_real_budget(["HOTEL", "ANIO"], all_kpis)
-        return "## Annual KPIs by Hotel\n\n" + self._df_to_markdown(df, ["HOTEL", "ANIO"], self.categories)
-    
-    def kpis_by_hotel_period(self,
-                              hotels: list[str] | str | None = None, 
-                              years: list[int] | int | None = None, 
-                              category: str | None = None,
-                              metrics: list[str] | str | None = None) -> str:
+        return "## Annual KPIs by Hotel\n\n" + self._df_to_markdown(
+            df, ["HOTEL", "ANIO"], self.categories
+        )
+
+    def kpis_by_hotel_period(
+        self,
+        hotels: list[str] | str | None = None,
+        years: list[int] | int | None = None,
+        category: str | None = None,
+        metrics: list[str] | str | None = None,
+    ) -> str:
         """
         [INDIVIDUAL LEVEL] Retrieves monthly KPIs by hotel.
         Args:
@@ -216,23 +313,22 @@ class KpiService:
                 hotels = [hotels]
             if isinstance(years, int):
                 years = [years]
-            if isinstance(metrics, str): 
+            if isinstance(metrics, str):
                 metrics = [metrics]
             if hotels:
-                hotels_upper = [h.upper() for h in hotels]
-                self.df = self.df[self.df["HOTEL"].str.upper().isin(hotels_upper)]
+                self.df = self.df[self.df["HOTEL"].isin(hotels)]
             if years:
                 self.df = self.df[self.df["ANIO"].isin(years)]
             if self.df.empty:
                 return "No data found for the requested hotels/years."
 
-            #Select Category of metric
+            # Select Category of metric
             target_metrics = self.DEPARTMENTAL_METRICS
             target_categories = self.DEPARTMENTAL_CATEGORIES
             scope_name = "Departmental Summary"
-         
+
             if metrics:
-                #Filter specific metrics
+                # Filter specific metrics
                 target_metrics = [m for m in metrics if m in self.METRIC_FORMULAS]
                 if target_metrics:
                     target_categories = {"Custom Metrics": target_metrics}
@@ -253,14 +349,16 @@ class KpiService:
                     scope_name = category
 
             if not target_metrics:
-                 return "Error: No valid metrics found to calculate."
+                return "Error: No valid metrics found to calculate."
 
             df = self._agg_real_budget(["HOTEL", "ANIO", "MES"], target_metrics)
             title_scope = ", ".join(hotels) if hotels else "All Hotels"
-            
-            return f"## Historical Monthly KPIs: {title_scope} - {scope_name}\n\n" + \
-                   self._df_to_markdown(df, ["HOTEL", "ANIO", "MES"], target_categories)
-                   
+
+            return (
+                f"## Historical Monthly KPIs: {title_scope} - {scope_name}\n\n"
+                + self._df_to_markdown(df, ["HOTEL", "ANIO", "MES"], target_categories)
+            )
+
         finally:
             self.df = df_original
 
@@ -271,7 +369,9 @@ class KpiService:
             self.df = self.df[self.df["ANIO"] == year].copy()
             all_kpis = [kpi for cat in self.categories.values() for kpi in cat]
             df = self._agg_real_budget(["MES"], all_kpis)
-            return f"## Monthly KPIs {year}\n\n" + self._df_to_markdown(df, ["MES"], self.categories)
+            return f"## Monthly KPIs {year}\n\n" + self._df_to_markdown(
+                df, ["MES"], self.categories
+            )
         except Exception as e:
             return f"Error retrieving monthly KPIs for {year}: {e}"
         finally:
@@ -285,17 +385,21 @@ class KpiService:
                 self.df = self.df[self.df["ANIO"] == year].copy()
             df = self._agg_real_budget(["ANIO"], self.DEPARTMENTAL_METRICS)
             title = f"## Departmental KPIs — {year if year else 'All Years'}\n\n"
-            return title + self._df_to_markdown(df, ["ANIO"], self.DEPARTMENTAL_CATEGORIES)
+            return title + self._df_to_markdown(
+                df, ["ANIO"], self.DEPARTMENTAL_CATEGORIES
+            )
         finally:
             self.df = df_original
 
     def departmental_kpis_monthly(self, year: int = 2025) -> str:
-        """Retrieves Rooms, F&B, and Undistributed departmental revenue/opex/personnel/profit breakdown month by month for the given year (REAL vs BUDGET)."""
+        """Retrieves Rooms, F&B (Food & Beverage), and Undistributed departmental revenue/opex/personnel/profit breakdown month by month for the given year (REAL vs BUDGET)."""
         df_original = self.df
         try:
             self.df = self.df[self.df["ANIO"] == year].copy()
             df = self._agg_real_budget(["MES"], self.DEPARTMENTAL_METRICS)
-            return f"## Monthly Departmental KPIs {year}\n\n" + self._df_to_markdown(df, ["MES"], self.DEPARTMENTAL_CATEGORIES)
+            return f"## Monthly Departmental KPIs {year}\n\n" + self._df_to_markdown(
+                df, ["MES"], self.DEPARTMENTAL_CATEGORIES
+            )
         finally:
             self.df = df_original
 
@@ -318,9 +422,13 @@ class KpiService:
             for _, r in annual.iterrows():
                 row = {"Year": int(r["ANIO"])}
                 for m in metrics:
-                    row[f"{m}_Real"] = self._auto_format(r.get(f"{m}_REAL"), f"{m}_REAL")
-                    row[f"{m}_Bdg"]  = self._auto_format(r.get(f"{m}_BUDGET"), f"{m}_BUDGET")
-                    row[f"{m}_Var"]  = self._auto_format(r.get(f"{m}_VAR"), f"{m}_VAR")
+                    row[f"{m}_Real"] = self._auto_format(
+                        r.get(f"{m}_REAL"), f"{m}_REAL"
+                    )
+                    row[f"{m}_Bdg"] = self._auto_format(
+                        r.get(f"{m}_BUDGET"), f"{m}_BUDGET"
+                    )
+                    row[f"{m}_Var"] = self._auto_format(r.get(f"{m}_VAR"), f"{m}_VAR")
                 rows.append(row)
             md += pd.DataFrame(rows).to_markdown(index=False) + "\n\n"
 
@@ -331,9 +439,13 @@ class KpiService:
             for _, r in monthly.iterrows():
                 row = {"Month": int(r["MES"])}
                 for m in metrics:
-                    row[f"{m}_Real"] = self._auto_format(r.get(f"{m}_REAL"), f"{m}_REAL")
-                    row[f"{m}_Bdg"]  = self._auto_format(r.get(f"{m}_BUDGET"), f"{m}_BUDGET")
-                    row[f"{m}_Var"]  = self._auto_format(r.get(f"{m}_VAR"), f"{m}_VAR")
+                    row[f"{m}_Real"] = self._auto_format(
+                        r.get(f"{m}_REAL"), f"{m}_REAL"
+                    )
+                    row[f"{m}_Bdg"] = self._auto_format(
+                        r.get(f"{m}_BUDGET"), f"{m}_BUDGET"
+                    )
+                    row[f"{m}_Var"] = self._auto_format(r.get(f"{m}_VAR"), f"{m}_VAR")
                 rows.append(row)
             md += pd.DataFrame(rows).to_markdown(index=False) + "\n\n"
 
@@ -353,7 +465,15 @@ class KpiService:
 
     def get_portafolio_context(self) -> str:
         """Retrieves the hotel portfolio details"""
-        context_cols = ["HOTEL", "CONTINENTE", "PAIS", "CATEGORIA", "TOTAL_HABITACIONES","MESES_OPEN","PERIOD_CLOSE"]
+        context_cols = [
+            "HOTEL",
+            "CONTINENTE",
+            "PAIS",
+            "CATEGORIA",
+            "TOTAL_HABITACIONES",
+            "MONTHS_OPEN",
+            "PERIOD_CLOSE",
+        ]
         df_context = self.df[context_cols].drop_duplicates().sort_values("HOTEL")
         md = "## Perfil del Portafolio de Activos\n"
         md += "Este portafolio incluye los hoteles con sus características geográficas y de categoría:\n\n"
