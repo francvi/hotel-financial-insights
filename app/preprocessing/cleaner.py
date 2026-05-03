@@ -9,12 +9,12 @@ class DataCleaner:
     }
 
     NEW_HOTELS_DATA = [
-        ("HOTEL ALHAMBRA", "ESP", "3*", "EUROPA"),
-        ("HOTEL JUPITER", "ESP", "3*", "EUROPA"),
-        ("HOTEL MIRADOR", "ESP", "3*", "EUROPA"),
-        ("HOTEL ORION", "ESP", "3*", "EUROPA"),
-        ("HOTEL PRISMA", "ESP", "3*", "EUROPA"),
-        ("HOTEL QUASAR", "ESP", "3*", "EUROPA"),
+        ("HOTEL ALHAMBRA", "ESP", "5*", "EUROPA"),
+        ("HOTEL JUPITER", "ESP", "4*", "EUROPA"),
+        ("HOTEL MIRADOR", "ESP", "4*", "EUROPA"),
+        ("HOTEL ORION", "ESP", "4*", "EUROPA"),
+        ("HOTEL PRISMA", "ESP", "4*", "EUROPA"),
+        ("HOTEL QUASAR", "ESP", "4*", "EUROPA"),
         ("HOTEL BOREALIS", "ESP", "5*", "EUROPA"),
         ("HOTEL IRIS", "ESP", "3*", "EUROPA")]
     
