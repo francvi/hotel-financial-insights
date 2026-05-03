@@ -59,7 +59,7 @@ class KpiService:
         - d["ROOMS_OPEX"]
         - d["ROOMS_PERSONNEL"],
         "ROOMS_PROFIT_MARGIN": lambda d: (
-            d["ROOMS_REVENUE"] - d["ROOMS_OPEX"] - d["ROOMS_PERSONNEL"]
+            d["ROOMS_REVENUE"] + (d["ROOMS_OPEX"] + d["ROOMS_PERSONNEL"])
         )
         / d["ROOMS_REVENUE"].replace(0, np.nan),
         "FB_REVENUE": lambda d: d["FB_REVENUE"],
