@@ -263,3 +263,27 @@ La documentación técnica del proyecto está organizada en `docs/`:
 | `TECH_STACK.md` | Stack tecnológico completo con versiones |
 | `LLM_SELECTION.md` | Justificación de modelos y evolución desde GPT-4.1 |
 | `UAT.md` | Framework de evaluación, criterios y uso de la CLI |
+
+### 4.7 Análisis de costos — migración de modelos
+
+Análisis cuantitativo sobre trazas de experimentación (23–30 abril 2026) que valida la decisión de migrar de la familia `gpt-4.1` a `gpt-5.4`. Reporte completo en `reports/llm-cost-latency-analysis.md`.
+
+#### Reducción de costo por engine (post-migración)
+
+| Engine | Modelo anterior | Modelo nuevo | Costo avg/llamada | Reducción |
+|--------|----------------|--------------|-------------------|-----------|
+| Chat | gpt-4.1 | gpt-5.4-mini | $0.0038 | -22% |
+| Insights | gpt-4.1-2025-04-14 | gpt-5.4-mini | $0.0102 | -55% |
+| Suggestions | gpt-4.1-2025-04-14 | gpt-5.4-nano | $0.0004 | -79% |
+
+Insights es el engine de mayor costo por llamada. Suggestions resulta marginal a cualquier escala ($0.0004/llamada). El ahorro en Chat (-22%) se produce a pesar de procesar 8× más tokens por llamada, lo que confirma la brecha de precio por token entre generaciones de modelos.
+
+#### Estimación de costo por usuario/mes (escenario real)
+
+| Perfil | Uso típico | Costo/mes |
+|--------|-----------|-----------|
+| Ligero | 3 conv/semana, 1 insight/semana | ~$0.15 |
+| Moderado | 5 conv/día, 1 insight/día | ~$1.06 |
+| Intensivo | 15 conv/día, 3 insights/día | ~$3.18 |
+
+Con distribución 60/30/10: **~$0.47/usuario/mes**. A 100 usuarios activos, el costo operativo LLM estimado es $47/mes (~$564/año).
