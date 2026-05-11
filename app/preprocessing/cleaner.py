@@ -191,5 +191,6 @@ class DataCleaner:
 
 
         df = pnl_tmp.merge(hotels, on="HOTEL", how="left")
+        df["TOTAL_HABITACIONES"] = df["TOTAL_HABITACIONES"].fillna(df.groupby("CATEGORIA")["TOTAL_HABITACIONES"].transform("median"))
         df["HOTEL"] = df["HOTEL"].str.title()
         return df
